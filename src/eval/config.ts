@@ -41,9 +41,11 @@ export const ServerSchema = z.discriminatedUnion("transport", [
 export const ConfigSchema = z.object({
   server: ServerSchema,
   workflows: z.array(WorkflowSchema),
+  timeout: z.number().optional().default(30000),
   llmJudge: z.boolean().default(false),
   openaiKey: z.string().optional(),
-  timeout: z.number().optional().default(30000), // 30 seconds default
+  judgeModel: z.string().default("gpt-4o"),
+  passThreshold: z.number().min(0).max(1).default(0.8),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
