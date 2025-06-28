@@ -1,0 +1,61 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-weather"],
+    "env": {
+      "ACCUWEATHER_API_KEY": "YOUR_API_KEY_HERE"
+    }
+  },
+  "workflows": [
+    {
+      "name": "basic-weather-query",
+      "description": "Test basic weather functionality",
+      "steps": [
+        {
+          "user": "What's the weather in San Francisco?",
+          "expectTools": ["get-forecast"],
+          "expectedState": "San Francisco"
+        }
+      ]
+    },
+    {
+      "name": "temperature-check",
+      "description": "Check temperature information",
+      "steps": [
+        {
+          "user": "What's the temperature in New York City right now?",
+          "expectTools": ["get-forecast"],
+          "expectedState": "temperature"
+        }
+      ]
+    },
+    {
+      "name": "multi-city-weather",
+      "description": "Test multiple weather queries",
+      "steps": [
+        {
+          "user": "What's the weather in London?",
+          "expectTools": ["get-forecast"]
+        },
+        {
+          "user": "How about Tokyo?",
+          "expectTools": ["get-forecast"],
+          "expectedState": "Tokyo"
+        }
+      ]
+    },
+    {
+      "name": "weather-comparison",
+      "description": "Compare weather between cities",
+      "steps": [
+        {
+          "user": "Compare the weather between Paris and Berlin",
+          "expectTools": ["get-forecast", "get-forecast"]
+        }
+      ]
+    }
+  ],
+  "llmJudge": false,
+  "timeout": 30000
+} 

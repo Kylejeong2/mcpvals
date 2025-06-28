@@ -1,0 +1,70 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["./simple-mcp-server.js"]
+  },
+  "workflows": [
+    {
+      "name": "test-all-metrics",
+      "description": "Comprehensive test of all three evaluation metrics",
+      "steps": [
+        {
+          "user": "Calculate 15 + 27",
+          "expectTools": ["add"],
+          "expectedState": "42"
+        },
+        {
+          "user": "Now multiply the result by 2",
+          "expectTools": ["multiply"],
+          "expectedState": "84"
+        },
+        {
+          "user": "Divide that by 4",
+          "expectTools": ["divide"],
+          "expectedState": "21"
+        }
+      ]
+    },
+    {
+      "name": "test-tool-order",
+      "description": "Test tool invocation order metric specifically",
+      "steps": [
+        {
+          "user": "First add 10 and 5",
+          "expectTools": ["add"]
+        },
+        {
+          "user": "Then subtract 3 from the result",
+          "expectTools": ["subtract"]
+        },
+        {
+          "user": "Finally multiply by 4",
+          "expectTools": ["multiply"]
+        }
+      ]
+    },
+    {
+      "name": "test-error-handling",
+      "description": "Test tool call health metric with error scenario",
+      "steps": [
+        {
+          "user": "Divide 10 by 0",
+          "expectTools": ["divide"]
+        }
+      ]
+    },
+    {
+      "name": "test-end-to-end-only",
+      "description": "Focus on end-to-end success metric",
+      "steps": [
+        {
+          "user": "What is 7 times 6?",
+          "expectedState": "42"
+        }
+      ]
+    }
+  ],
+  "llmJudge": false,
+  "timeout": 30000
+} 

@@ -1,0 +1,35 @@
+{
+  "server": {
+    "transport": "shttp",
+    "url": "https://mcp-server-fetch.vercel.app/sse",
+    "headers": {
+      "User-Agent": "MCPVals/1.0"
+    }
+  },
+  "workflows": [
+    {
+      "name": "fetch-webpage",
+      "description": "Test fetching web content",
+      "steps": [
+        {
+          "user": "Fetch the content from https://example.com",
+          "expectTools": ["fetch"],
+          "expectedState": "Example Domain"
+        }
+      ]
+    },
+    {
+      "name": "fetch-json-api",
+      "description": "Test fetching JSON data",
+      "steps": [
+        {
+          "user": "Fetch data from https://api.github.com/repos/modelcontextprotocol/servers",
+          "expectTools": ["fetch"],
+          "expectedState": "modelcontextprotocol"
+        }
+      ]
+    }
+  ],
+  "llmJudge": false,
+  "timeout": 45000
+} 

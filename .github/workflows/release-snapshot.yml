@@ -1,0 +1,52 @@
+name: Release Snapshot
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  release-snapshot:
+    name: Release Snapshot
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN_PULL_REQUESTS }}
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        id: pnpm-setup
+        with:
+          version: 9.4.0
+          run_install: false
+
+      - name: Add npm auth token to pnpm
+        run: pnpm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN_ELEVATED}"
+        env:
+          NPM_TOKEN_ELEVATED: ${{secrets.NPM_TOKEN_ELEVATED}}
+      - name: Install Dependencies
+        id: pnpm-install
+        run: pnpm install --frozen-lockfile
+
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
+
+      - name: Create Snapshot Release
+        run: |
+          pnpm changeset version --snapshot ${SHORT_SHA}
+          pnpm build
+          pnpm changeset publish --no-git-tag --tag snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_PULL_REQUESTS }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}

@@ -1,0 +1,80 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"],
+    "env": {
+      "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_TOKEN_HERE"
+    }
+  },
+  "workflows": [
+    {
+      "name": "search-repositories",
+      "description": "Test searching GitHub repositories",
+      "steps": [
+        {
+          "user": "Search for repositories about Model Context Protocol",
+          "expectTools": ["search_repositories"],
+          "expectedState": "modelcontextprotocol"
+        }
+      ]
+    },
+    {
+      "name": "create-and-manage-issue",
+      "description": "Test issue creation and management",
+      "steps": [
+        {
+          "user": "Create an issue in test-repo with title 'Test Issue' and body 'This is a test'",
+          "expectTools": ["create_issue"]
+        },
+        {
+          "user": "List all open issues in test-repo",
+          "expectTools": ["search_issues"],
+          "expectedState": "Test Issue"
+        }
+      ]
+    },
+    {
+      "name": "file-operations",
+      "description": "Test file reading and searching",
+      "steps": [
+        {
+          "user": "Read the README.md file from modelcontextprotocol/servers repository",
+          "expectTools": ["read_file"],
+          "expectedState": "Model Context Protocol"
+        },
+        {
+          "user": "Search for TypeScript files in the src directory",
+          "expectTools": ["search_code"],
+          "expectedState": ".ts"
+        }
+      ]
+    },
+    {
+      "name": "pull-request-workflow",
+      "description": "Test pull request operations",
+      "steps": [
+        {
+          "user": "List open pull requests in modelcontextprotocol/servers",
+          "expectTools": ["search_pull_requests"]
+        },
+        {
+          "user": "Create a new branch called 'test-branch'",
+          "expectTools": ["create_branch"]
+        }
+      ]
+    },
+    {
+      "name": "error-handling-test",
+      "description": "Test error scenarios",
+      "steps": [
+        {
+          "user": "Try to read a file that doesn't exist: nonexistent.txt",
+          "expectTools": ["read_file"]
+        }
+      ]
+    }
+  ],
+  "llmJudge": false,
+  "timeout": 60000
+} 

@@ -1,0 +1,22 @@
+{
+  "name": "mcpvals-examples",
+  "version": "1.0.0",
+  "description": "Example MCP servers and configurations for MCPVals testing",
+  "type": "module",
+  "scripts": {
+    "start": "node simple-mcp-server.js",
+    "test:simple": "mcpvals eval ./simple-server-eval.config.json",
+    "test:weather": "mcpvals eval ./weather-server-eval.config.json",
+    "test:github": "mcpvals eval ./github-server-eval.config.json",
+    "test:remote": "mcpvals eval ./remote-server-eval.config.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "devDependencies": {
+    "@mcpvals": "^0.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 
