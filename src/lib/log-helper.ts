@@ -41,7 +41,7 @@ export interface McpErrorEvent extends McpEventBase {
 export type McpEvent = McpSessionEvent | McpRequestEvent | McpErrorEvent;
 
 export function createEvent<T extends McpEvent>(
-  event: Omit<T, "timestamp">
+  event: Omit<T, "timestamp">,
 ): T {
   return {
     ...event,

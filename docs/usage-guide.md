@@ -3,6 +3,7 @@
 This guide shows you how to use MCPVals to evaluate your MCP servers, with specific examples for testing each of the three core metrics individually.
 
 ## Table of Contents
+
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
 - [Testing Individual Metrics](#testing-individual-metrics)
@@ -48,9 +49,9 @@ import { evaluate } from "@mcpvals";
 async function runEvaluation() {
   const report = await evaluate("./mcp-eval.config.json", {
     debug: false,
-    reporter: "console"
+    reporter: "console",
   });
-  
+
   console.log(`Passed: ${report.passed}`);
   console.log(`Workflows evaluated: ${report.evaluations.length}`);
 }
@@ -87,11 +88,13 @@ This metric validates that your workflow reaches the expected final state. It ch
 ```
 
 **What it checks:**
+
 - ✅ Does the final message contain "42"?
 - ✅ Does the last tool result contain "42"?
 - ❌ Fails if neither contains the expected state
 
 **Tips for End-to-End Testing:**
+
 - Use specific, unique values in `expectedState`
 - The check is case-insensitive
 - It searches for substring matches, so "The answer is 42" will match "42"
@@ -105,7 +108,7 @@ This metric ensures tools are called in the expected sequence, which is critical
 ```json
 {
   "server": {
-    "transport": "stdio", 
+    "transport": "stdio",
     "command": "python",
     "args": ["./travel-assistant.py"]
   },
@@ -133,12 +136,14 @@ This metric ensures tools are called in the expected sequence, which is critical
 ```
 
 **What it checks:**
+
 - ✅ Were all expected tools called?
 - ✅ Were they called in the exact order specified?
 - ❌ Fails if tools are missing or out of order
-- ⚠️  Partial credit given (e.g., 3/4 tools in correct order = 75%)
+- ⚠️ Partial credit given (e.g., 3/4 tools in correct order = 75%)
 
 **Tips for Tool Order Testing:**
+
 - List tools in the exact order you expect them
 - Tools from all steps are concatenated into one sequence
 - Extra tool calls after the expected ones don't cause failure
@@ -182,12 +187,14 @@ This metric verifies that all tool calls complete successfully without errors.
 ```
 
 **What it checks:**
+
 - ✅ Did each tool return a result?
 - ✅ No exceptions thrown?
 - ✅ HTTP status codes 200-299 (for HTTP servers)?
 - ❌ Fails if any tool errors or returns bad status
 
 **Tips for Tool Health Testing:**
+
 - Test both success and failure scenarios
 - For HTTP servers, the library checks status codes
 - Tool timeouts are controlled by the `timeout` config option
@@ -242,8 +249,8 @@ const config: Config = {
     command: "tsx",
     args: ["./src/server.ts"],
     env: {
-      NODE_ENV: "test"
-    }
+      NODE_ENV: "test",
+    },
   },
   workflows: [
     {
@@ -253,18 +260,18 @@ const config: Config = {
         {
           user: "Run the test command",
           expectTools: ["execute_test"],
-          expectedState: "success"
-        }
-      ]
-    }
+          expectedState: "success",
+        },
+      ],
+    },
   ],
-  timeout: 60000
+  timeout: 60000,
 };
 
 // Run with custom config object
 const report = await evaluate(config, {
   debug: true,
-  reporter: "json"
+  reporter: "json",
 });
 ```
 
@@ -300,7 +307,9 @@ Summary:
 
 ```json
 {
-  "config": { /* your config */ },
+  "config": {
+    /* your config */
+  },
   "evaluations": [
     {
       "workflowName": "calculator-test",
@@ -354,6 +363,7 @@ Summary:
 - **0-69%** - Failed (shown in red)
 
 Each metric contributes equally to the overall score:
+
 - Overall Score = (Metric1 + Metric2 + Metric3) / 3
 
 ## Common Patterns
@@ -377,6 +387,7 @@ Each metric contributes equally to the overall score:
 ```
 
 This will:
+
 - ✅ Pass Tool Invocation Order (if `divide` is called)
 - ❌ Fail Tool Call Health (if division by zero throws error)
 - ❓ End-to-End Success depends on error handling
@@ -443,16 +454,19 @@ npx mcpvals eval ./tests/mcp-eval.config.json || exit 1
 ## Troubleshooting
 
 ### Server Won't Start
+
 - Check the command and args are correct
 - Verify the server file exists and is executable
 - Look for error messages with `--debug` flag
 
 ### Tools Not Found
+
 - Ensure tool names match exactly (case-sensitive)
 - Verify the server is exposing the expected tools
 - Use `mcpvals list` to see what's in your config
 
 ### Unexpected Failures
+
 - Use `--reporter json` to see detailed metadata
 - Check if your `expectedState` is too specific
-- Verify tool arguments are being passed correctly 
+- Verify tool arguments are being passed correctly

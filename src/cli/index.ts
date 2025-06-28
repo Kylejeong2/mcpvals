@@ -58,13 +58,22 @@ async function detectPackageManager(): Promise<
 
     // Fallback to npm if no lock file found
     return "npm";
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(
+        chalk.red(`Error detecting package manager: ${error.message}`),
+      );
+    } else {
+      console.error(
+        chalk.red("Error detecting package manager: Unknown error"),
+      );
+    }
     return "npm";
   }
 }
 
 async function installDependencies(
-  packageManager: "npm" | "pnpm" | "yarn" | "bun"
+  packageManager: "npm" | "pnpm" | "yarn" | "bun",
 ) {
   const execSync = (await import("node:child_process")).execSync;
   const dependencies = ["@vercel/mcp-adapter", "zod"];
@@ -78,15 +87,22 @@ async function installDependencies(
 
   try {
     console.log(
-      chalk.blue(`\nInstalling dependencies using ${packageManager}...`)
+      chalk.blue(`\nInstalling dependencies using ${packageManager}...`),
     );
     execSync(commands[packageManager], { stdio: "inherit" });
     console.log(chalk.green("\n✅ Dependencies installed successfully!"));
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(
+        chalk.red(`Error installing dependencies: ${error.message}`),
+      );
+    } else {
+      console.error(chalk.red("Error installing dependencies: Unknown error"));
+    }
     console.error(
       chalk.red(
-        "\n❌ Failed to install dependencies. You can install them manually:"
-      )
+        "\n❌ Failed to install dependencies. You can install them manually:",
+      ),
     );
     console.log(chalk.yellow(`\n${commands[packageManager]}`));
   }
@@ -96,12 +112,12 @@ async function init() {
   try {
     // Check if we're in a Next.js project
     const packageJson = JSON.parse(
-      await fs.readFile(path.join(process.cwd(), "package.json"), "utf-8")
+      await fs.readFile(path.join(process.cwd(), "package.json"), "utf-8"),
     );
 
     if (!packageJson.dependencies?.next && !packageJson.devDependencies?.next) {
       console.error(
-        chalk.red("❌ This command must be run in a Next.js project")
+        chalk.red("❌ This command must be run in a Next.js project"),
       );
       process.exit(1);
     }

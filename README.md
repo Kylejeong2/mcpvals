@@ -2,7 +2,6 @@
 
 An evaluation library for Model Context Protocol (MCP) servers. Test and validate your MCP servers with deterministic metrics and optional LLM-based evaluation.
 
-
 ## Features
 
 - 🎯 **Three Core Metrics**:
@@ -50,7 +49,7 @@ import { evaluate } from "@mcpvals";
 const report = await evaluate("./mcp-eval.config.json", {
   debug: true,
   reporter: "console",
-  llmJudge: false
+  llmJudge: false,
 });
 
 console.log(`Evaluation ${report.passed ? "passed" : "failed"}`);
@@ -90,6 +89,7 @@ Create an `mcp-eval.config.json` file:
 ### Server Configuration
 
 **stdio servers:**
+
 ```json
 {
   "transport": "stdio",
@@ -102,6 +102,7 @@ Create an `mcp-eval.config.json` file:
 ```
 
 **HTTP servers:**
+
 ```json
 {
   "transport": "shttp",
@@ -121,8 +122,8 @@ Create an `mcp-eval.config.json` file:
   "steps": [
     {
       "user": "User message to send",
-      "expectTools": ["tool1", "tool2"],  // Optional: Expected tools in order
-      "expectedState": "Expected result"   // Optional: For end-to-end validation
+      "expectTools": ["tool1", "tool2"], // Optional: Expected tools in order
+      "expectedState": "Expected result" // Optional: For end-to-end validation
     }
   ]
 }
@@ -131,19 +132,25 @@ Create an `mcp-eval.config.json` file:
 ## Evaluation Metrics
 
 ### 1. End-to-End Success ✅
+
 Validates that the workflow reached the expected final state. The evaluator checks:
+
 - Last assistant message content
 - Final tool result output
 - String matching against `expectedState`
 
 ### 2. Tool Invocation Order 🔧
+
 Ensures tools are called in the expected sequence:
+
 - Exact order matching
 - Partial credit for partially correct sequences
 - Handles workflows with no tool expectations
 
 ### 3. Tool Call Health 💚
+
 Verifies all tool calls completed successfully:
+
 - No exceptions thrown
 - HTTP status codes 200-299
 - Valid response payloads
@@ -151,6 +158,7 @@ Verifies all tool calls completed successfully:
 ## Output Formats
 
 ### Console Reporter (Default)
+
 ```
 MCP Server Evaluation Results
 ============================================================
@@ -176,14 +184,17 @@ Summary:
 ```
 
 ### JSON Reporter
+
 Outputs complete evaluation data as JSON for programmatic processing.
 
 ### JUnit Reporter (Coming Soon)
+
 Generates JUnit XML for CI/CD integration.
 
 ## Advanced Usage
 
 ### TypeScript Configuration
+
 ```typescript
 import { Config } from "@mcpvals";
 
@@ -202,7 +213,9 @@ const config: Config = {
 ```
 
 ### LLM Judge (Optional)
+
 Enable AI-powered evaluation for subjective criteria:
+
 ```bash
 npx mcpvals eval config.json --llm
 ```

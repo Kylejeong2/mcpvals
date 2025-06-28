@@ -16,7 +16,7 @@ export class EventEmittingResponse extends ServerResponse {
   constructor(
     req: IncomingMessage,
     onEvent?: (event: McpEvent) => void,
-    sessionId?: string
+    sessionId?: string,
   ) {
     super(req);
     this.onEvent = onEvent;
@@ -32,14 +32,14 @@ export class EventEmittingResponse extends ServerResponse {
           ...event,
           sessionId: this.sessionId,
           requestId: this.requestId,
-        } as Omit<McpEvent, "timestamp">)
+        } as Omit<McpEvent, "timestamp">),
       );
     }
   }
 
   startSession(
     transport: "SSE" | "HTTP",
-    clientInfo?: { userAgent?: string; ip?: string }
+    clientInfo?: { userAgent?: string; ip?: string },
   ) {
     this.emitEvent({
       type: "SESSION_STARTED",
@@ -82,7 +82,7 @@ export class EventEmittingResponse extends ServerResponse {
     error: Error | string,
     context?: string,
     source: McpErrorEvent["source"] = "system",
-    severity: McpErrorEvent["severity"] = "error"
+    severity: McpErrorEvent["severity"] = "error",
   ) {
     this.emitEvent({
       type: "ERROR",
@@ -96,7 +96,7 @@ export class EventEmittingResponse extends ServerResponse {
   end(
     chunk?: unknown,
     encoding?: BufferEncoding | (() => void),
-    cb?: () => void
+    cb?: () => void,
   ): this {
     let finalChunk = chunk;
     let finalEncoding = encoding;
@@ -114,7 +114,7 @@ export class EventEmittingResponse extends ServerResponse {
     return super.end(
       finalChunk as string | Buffer,
       finalEncoding as BufferEncoding,
-      finalCallback
+      finalCallback,
     );
   }
 }

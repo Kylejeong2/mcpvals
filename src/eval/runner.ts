@@ -1,9 +1,9 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { execa, ExecaChildProcess } from 'execa';
-import { ServerConfig } from './config.js';
-import { TraceStore } from './trace.js';
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { execa, ExecaChildProcess } from "execa";
+import { ServerConfig } from "./config.js";
+import { TraceStore } from "./trace.js";
 
 export interface ServerRunnerOptions {
   timeout?: number;
@@ -17,7 +17,11 @@ export class ServerRunner {
   private serverConfig: ServerConfig;
   private options: ServerRunnerOptions;
 
-  constructor(serverConfig: ServerConfig, traceStore: TraceStore, options: ServerRunnerOptions = {}) {
+  constructor(
+    serverConfig: ServerConfig,
+    traceStore: TraceStore,
+    options: ServerRunnerOptions = {},
+  ) {
     this.serverConfig = serverConfig;
     this.traceStore = traceStore;
     this.options = options;
@@ -27,7 +31,7 @@ export class ServerRunner {
    * Start the MCP server and establish connection
    */
   async start(): Promise<void> {
-    if (this.serverConfig.transport === 'stdio') {
+    if (this.serverConfig.transport === "stdio") {
       await this.startStdioServer();
     } else {
       await this.startHttpServer();
@@ -38,15 +42,19 @@ export class ServerRunner {
    * Start a stdio-based MCP server
    */
   private async startStdioServer(): Promise<void> {
-    if (this.serverConfig.transport !== 'stdio') {
-      throw new Error('Invalid server config for stdio');
+    if (this.serverConfig.transport !== "stdio") {
+      throw new Error("Invalid server config for stdio");
     }
 
     // Start the process
-    this.process = execa(this.serverConfig.command, this.serverConfig.args || [], {
-      env: this.serverConfig.env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
+    this.process = execa(
+      this.serverConfig.command,
+      this.serverConfig.args || [],
+      {
+        env: this.serverConfig.env,
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
 
     // Create transport
     const transport = new StdioClientTransport({
@@ -56,12 +64,15 @@ export class ServerRunner {
     });
 
     // Initialize client
-    this.client = new Client({
-      name: 'mcpvals-evaluator',
-      version: '0.0.1',
-    }, {
-      capabilities: {},
-    });
+    this.client = new Client(
+      {
+        name: "mcpvals-evaluator",
+        version: "0.0.1",
+      },
+      {
+        capabilities: {},
+      },
+    );
 
     // Set up tracing
     this.setupTracing();
@@ -70,7 +81,7 @@ export class ServerRunner {
     await this.client.connect(transport);
 
     if (this.options.debug) {
-      console.log('Connected to stdio MCP server');
+      console.log("Connected to stdio MCP server");
     }
   }
 
@@ -78,20 +89,23 @@ export class ServerRunner {
    * Start an HTTP-based MCP server connection
    */
   private async startHttpServer(): Promise<void> {
-    if (this.serverConfig.transport !== 'shttp') {
-      throw new Error('Invalid server config for HTTP');
+    if (this.serverConfig.transport !== "shttp") {
+      throw new Error("Invalid server config for HTTP");
     }
 
     // Create SSE transport
     const transport = new SSEClientTransport(new URL(this.serverConfig.url));
 
     // Initialize client
-    this.client = new Client({
-      name: 'mcpvals-evaluator',
-      version: '0.0.1',
-    }, {
-      capabilities: {},
-    });
+    this.client = new Client(
+      {
+        name: "mcpvals-evaluator",
+        version: "0.0.1",
+      },
+      {
+        capabilities: {},
+      },
+    );
 
     // Set up tracing
     this.setupTracing();
@@ -100,7 +114,7 @@ export class ServerRunner {
     await this.client.connect(transport);
 
     if (this.options.debug) {
-      console.log('Connected to HTTP MCP server');
+      console.log("Connected to HTTP MCP server");
     }
   }
 
@@ -114,7 +128,7 @@ export class ServerRunner {
     // We'll rely on our wrapper methods (listTools, callTool) to track operations
     // For now, we'll log that tracing is set up
     if (this.options.debug) {
-      console.log('Tracing enabled for MCP client');
+      console.log("Tracing enabled for MCP client");
     }
   }
 
@@ -123,7 +137,7 @@ export class ServerRunner {
    */
   getClient(): Client {
     if (!this.client) {
-      throw new Error('Server not started');
+      throw new Error("Server not started");
     }
     return this.client;
   }
@@ -140,10 +154,10 @@ export class ServerRunner {
   /**
    * Call a tool
    */
-  async callTool(name: string, args: any) {
+  async callTool(name: string, args: Record<string, unknown>) {
     const client = this.getClient();
     const toolCallId = `tool_${Date.now()}`;
-    
+
     // Record the tool call
     this.traceStore.addToolCall({
       id: toolCallId,
@@ -196,7 +210,7 @@ export class ServerRunner {
     }
 
     if (this.options.debug) {
-      console.log('MCP server stopped');
+      console.log("MCP server stopped");
     }
   }
-} 
+}

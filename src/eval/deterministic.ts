@@ -1,12 +1,12 @@
-import { TraceStore } from './trace.js';
-import { Workflow } from './config.js';
+import { TraceStore } from "./trace.js";
+import { Workflow } from "./config.js";
 
 export interface EvaluationResult {
   metric: string;
   passed: boolean;
   score: number;
   details: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface WorkflowEvaluation {
@@ -42,8 +42,9 @@ export class DeterministicEvaluator {
     results.push(toolHealthResult);
 
     // Calculate overall score
-    const overallScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
-    const passed = results.every(r => r.passed);
+    const overallScore =
+      results.reduce((sum, r) => sum + r.score, 0) / results.length;
+    const passed = results.every((r) => r.passed);
 
     return {
       workflowName: workflow.name,
@@ -63,10 +64,10 @@ export class DeterministicEvaluator {
 
     if (!lastStep.expectedState || !lastMessage) {
       return {
-        metric: 'End-to-End Success',
+        metric: "End-to-End Success",
         passed: true,
         score: 1.0,
-        details: 'No expected state defined or no messages recorded',
+        details: "No expected state defined or no messages recorded",
       };
     }
 
@@ -91,10 +92,10 @@ export class DeterministicEvaluator {
     const passed = containsExpectedState || toolResultMatches;
 
     return {
-      metric: 'End-to-End Success',
+      metric: "End-to-End Success",
       passed,
       score: passed ? 1.0 : 0.0,
-      details: passed 
+      details: passed
         ? `Successfully reached expected state: "${lastStep.expectedState}"`
         : `Failed to reach expected state: "${lastStep.expectedState}"`,
       metadata: {
@@ -110,7 +111,7 @@ export class DeterministicEvaluator {
    * Check if tools were called in the expected order
    */
   private evaluateToolInvocationOrder(workflow: Workflow): EvaluationResult {
-    const actualToolCalls = this.traceStore.getToolCalls().map(tc => tc.name);
+    const actualToolCalls = this.traceStore.getToolCalls().map((tc) => tc.name);
     const expectedTools: string[] = [];
 
     // Collect all expected tools from workflow steps
@@ -122,16 +123,20 @@ export class DeterministicEvaluator {
 
     if (expectedTools.length === 0) {
       return {
-        metric: 'Tool Invocation Order',
+        metric: "Tool Invocation Order",
         passed: true,
         score: 1.0,
-        details: 'No expected tool order defined',
+        details: "No expected tool order defined",
       };
     }
 
     // Check if actual tools match expected tools in order
     let matchCount = 0;
-    for (let i = 0; i < Math.min(actualToolCalls.length, expectedTools.length); i++) {
+    for (
+      let i = 0;
+      i < Math.min(actualToolCalls.length, expectedTools.length);
+      i++
+    ) {
       if (actualToolCalls[i] === expectedTools[i]) {
         matchCount++;
       } else {
@@ -139,16 +144,19 @@ export class DeterministicEvaluator {
       }
     }
 
-    const allMatch = matchCount === expectedTools.length && actualToolCalls.length >= expectedTools.length;
-    const score = expectedTools.length > 0 ? matchCount / expectedTools.length : 1.0;
+    const allMatch =
+      matchCount === expectedTools.length &&
+      actualToolCalls.length >= expectedTools.length;
+    const score =
+      expectedTools.length > 0 ? matchCount / expectedTools.length : 1.0;
 
     return {
-      metric: 'Tool Invocation Order',
+      metric: "Tool Invocation Order",
       passed: allMatch,
       score,
       details: allMatch
         ? `All ${expectedTools.length} tools called in correct order`
-        : `Matched ${matchCount}/${expectedTools.length} tools. Expected: [${expectedTools.join(', ')}], Actual: [${actualToolCalls.join(', ')}]`,
+        : `Matched ${matchCount}/${expectedTools.length} tools. Expected: [${expectedTools.join(", ")}], Actual: [${actualToolCalls.join(", ")}]`,
       metadata: {
         expectedTools,
         actualTools: actualToolCalls,
@@ -167,10 +175,10 @@ export class DeterministicEvaluator {
 
     if (toolCalls.length === 0) {
       return {
-        metric: 'Tool Call Health',
+        metric: "Tool Call Health",
         passed: true,
         score: 1.0,
-        details: 'No tool calls made',
+        details: "No tool calls made",
       };
     }
 
@@ -179,7 +187,7 @@ export class DeterministicEvaluator {
 
     for (const toolCall of toolCalls) {
       const result = this.traceStore.getToolResult(toolCall.id);
-      
+
       if (!result) {
         failures.push(`${toolCall.name}: No result recorded`);
         continue;
@@ -190,7 +198,10 @@ export class DeterministicEvaluator {
         continue;
       }
 
-      if (result.httpStatus && (result.httpStatus < 200 || result.httpStatus >= 300)) {
+      if (
+        result.httpStatus &&
+        (result.httpStatus < 200 || result.httpStatus >= 300)
+      ) {
         failures.push(`${toolCall.name}: HTTP ${result.httpStatus}`);
         continue;
       }
@@ -202,12 +213,12 @@ export class DeterministicEvaluator {
     const passed = successCount === toolCalls.length;
 
     return {
-      metric: 'Tool Call Health',
+      metric: "Tool Call Health",
       passed,
       score,
       details: passed
         ? `All ${toolCalls.length} tool calls completed successfully`
-        : `${successCount}/${toolCalls.length} tool calls succeeded. Failures: ${failures.join('; ')}`,
+        : `${successCount}/${toolCalls.length} tool calls succeeded. Failures: ${failures.join("; ")}`,
       metadata: {
         totalCalls: toolCalls.length,
         successCount,
@@ -222,10 +233,10 @@ export class DeterministicEvaluator {
   getSummary(): string {
     const toolCalls = this.traceStore.getToolCalls();
     const messages = this.traceStore.getConversation();
-    
+
     return `Evaluation Summary:
 - Messages exchanged: ${messages.length}
 - Tool calls made: ${toolCalls.length}
-- Tools used: ${[...new Set(toolCalls.map(tc => tc.name))].join(', ') || 'none'}`;
+- Tools used: ${[...new Set(toolCalls.map((tc) => tc.name))].join(", ") || "none"}`;
   }
-} 
+}

@@ -1,30 +1,30 @@
-import { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
+import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 
 export interface TraceEntry {
   timestamp: Date;
-  direction: 'client->server' | 'server->client';
+  direction: "client->server" | "server->client";
   message: JSONRPCMessage;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ToolCall {
   id: string;
   name: string;
-  arguments: any;
+  arguments: unknown;
   timestamp: Date;
 }
 
 export interface ToolResult {
   id: string;
   toolCallId: string;
-  result: any;
+  result: unknown;
   error?: string;
   httpStatus?: number;
   timestamp: Date;
 }
 
 export interface ConversationMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   toolCalls?: ToolCall[];
   timestamp: Date;
@@ -96,7 +96,7 @@ export class TraceStore {
    * Get tool result for a specific tool call
    */
   getToolResult(toolCallId: string): ToolResult | undefined {
-    return this.toolResults.find(r => r.toolCallId === toolCallId);
+    return this.toolResults.find((r) => r.toolCallId === toolCallId);
   }
 
   /**
@@ -127,4 +127,4 @@ export class TraceStore {
     this.toolResults = [];
     this.conversation = [];
   }
-} 
+}

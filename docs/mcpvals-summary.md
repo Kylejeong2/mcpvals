@@ -1,6 +1,7 @@
 # MCPVals - MCP Server Evaluation Library
 
 ## Overview
+
 MCPVals is a TypeScript/Next.js evaluation library for Model Context Protocol (MCP) servers. It provides deterministic metrics to validate MCP server behavior and optional LLM-based evaluation capabilities.
 
 ## What We Built
@@ -30,7 +31,7 @@ MCPVals is a TypeScript/Next.js evaluation library for Model Context Protocol (M
    - **Metric 2: Tool Invocation Order** - Ensures correct tool call sequence
    - **Metric 3: Tool Call Health** - Verifies all tools executed successfully
 
-5. **Reporters** 
+5. **Reporters**
    - **Console Reporter** (`src/eval/reporters/console.ts`) - Pretty-printed results with colors
    - **JSON Reporter** - Machine-readable output
    - **JUnit Reporter** - (Planned) CI/CD integration
@@ -80,6 +81,7 @@ MCPVals is a TypeScript/Next.js evaluation library for Model Context Protocol (M
 ## Usage Examples
 
 ### CLI
+
 ```bash
 # Run evaluation
 npx mcpvals eval ./config.json
@@ -89,12 +91,13 @@ npx mcpvals eval ./config.json --debug --reporter json --llm
 ```
 
 ### Library
+
 ```typescript
 import { evaluate } from "@mcpvals";
 
 const report = await evaluate("./config.json", {
   debug: true,
-  reporter: "console"
+  reporter: "console",
 });
 ```
 
@@ -110,9 +113,10 @@ const report = await evaluate("./config.json", {
 ## Testing
 
 The library includes comprehensive tests:
+
 - Configuration validation
-- Trace store functionality  
+- Trace store functionality
 - Deterministic evaluator logic
 - End-to-end evaluation flow
 
-All tests pass successfully, validating the core functionality. 
+All tests pass successfully, validating the core functionality.

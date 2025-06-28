@@ -5,14 +5,17 @@ This directory contains example configurations for testing various MCP servers w
 ## Available Examples
 
 ### 1. Simple Math Server (`simple-mcp-server.js`)
+
 A basic MCP server that provides mathematical operations (add, subtract, multiply, divide).
 
 **Features:**
+
 - Four basic math operations
 - Error handling (division by zero)
 - Clear, deterministic outputs
 
 **To test locally:**
+
 ```bash
 # Install dependencies
 npm install @modelcontextprotocol/sdk
@@ -22,13 +25,16 @@ npx mcpvals eval ./simple-server-eval.config.json
 ```
 
 ### 2. Weather Server (`weather-server-eval.config.json`)
+
 Tests the official MCP weather server from Anthropic.
 
 **Prerequisites:**
+
 - Get a free AccuWeather API key from [developer.accuweather.com](https://developer.accuweather.com/)
 - Set the API key in the config file or environment variable
 
 **To test:**
+
 ```bash
 # Set your API key
 export ACCUWEATHER_API_KEY="your-key-here"
@@ -38,13 +44,16 @@ npx mcpvals eval ./weather-server-eval.config.json
 ```
 
 ### 3. GitHub Server (`github-server-eval.config.json`)
+
 Tests the official GitHub MCP server with comprehensive workflows.
 
 **Prerequisites:**
+
 - Create a GitHub Personal Access Token
 - Set the token in the config file or environment variable
 
 **To test:**
+
 ```bash
 # Set your GitHub token
 export GITHUB_PERSONAL_ACCESS_TOKEN="your-token-here"
@@ -54,9 +63,11 @@ npx mcpvals eval ./github-server-eval.config.json
 ```
 
 ### 4. Remote Fetch Server (`remote-server-eval.config.json`)
+
 Tests a remote HTTP-based MCP server (no local installation needed).
 
 **To test:**
+
 ```bash
 # No setup required - uses public endpoint
 npx mcpvals eval ./remote-server-eval.config.json
@@ -67,14 +78,17 @@ npx mcpvals eval ./remote-server-eval.config.json
 Each example is designed to test specific metrics:
 
 ### End-to-End Success
+
 - `simple-server-eval.config.json`: "test-end-to-end-only" workflow
 - Tests if the final output matches expected state
 
 ### Tool Invocation Order
+
 - `simple-server-eval.config.json`: "test-tool-order" workflow
 - Validates tools are called in the correct sequence
 
 ### Tool Call Health
+
 - `simple-server-eval.config.json`: "test-error-handling" workflow
 - Checks error handling and tool execution success
 
@@ -85,6 +99,7 @@ Each example is designed to test specific metrics:
    - `shttp`: For remote HTTP/SSE servers
 
 2. **Define workflows:**
+
    ```json
    {
      "workflows": [
@@ -112,16 +127,19 @@ Each example is designed to test specific metrics:
 Based on the [awesome-mcp-servers](https://github.com/wong2/awesome-mcp-servers) list:
 
 1. **Filesystem** - File operations
+
    ```bash
    npx -y @modelcontextprotocol/server-filesystem
    ```
 
 2. **SQLite** - Database operations
+
    ```bash
    npx -y @modelcontextprotocol/server-sqlite
    ```
 
 3. **Fetch** - Web content fetching
+
    ```bash
    npx -y @modelcontextprotocol/server-fetch
    ```
@@ -147,4 +165,4 @@ To deploy the simple math server to a cloud service:
 3. **AWS Lambda**: Use with API Gateway
 4. **Google Cloud Run**: Containerize and deploy
 
-Example deployment guide coming soon! 
+Example deployment guide coming soon!
