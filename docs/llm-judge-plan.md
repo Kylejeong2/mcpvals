@@ -119,5 +119,3 @@ Provide: {"score":0-1,"reason":"…"}
 4. **Fine-Tuned Rubrics** – Custom prompt sections per workflow.
 
 ---
-
-_Last updated: {{DATE}}_

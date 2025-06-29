@@ -1,8 +1,13 @@
 import { loadConfig, Config } from "./config.js";
 import { ServerRunner } from "./runner.js";
 import { TraceStore } from "./trace.js";
-import { DeterministicEvaluator, WorkflowEvaluation } from "./deterministic.js";
+import {
+  DeterministicEvaluator,
+  WorkflowEvaluation,
+  EvaluationResult,
+} from "./deterministic.js";
 import { ConsoleReporter } from "./reporters/console.js";
+import { runLlmJudge } from "./llm-judge.js";
 
 export interface EvaluateOptions {
   debug?: boolean;
@@ -110,8 +115,44 @@ export async function evaluate(
 
       // Optional: LLM Judge evaluation
       if (options.llmJudge && config.llmJudge && config.openaiKey) {
-        // TODO: Implement LLM judge
-        console.log("LLM Judge evaluation not yet implemented");
+        try {
+          console.log("Running LLM Judge evaluation...");
+          const llmResult = await runLlmJudge({
+            model: config.judgeModel,
+            apiKey: config.openaiKey,
+            workflow,
+            traceStore,
+            maxMessages: 20, // Limit to last 20 messages to avoid token limits
+          });
+
+          // Add LLM judge result to the evaluation
+          const llmJudgeResult: EvaluationResult = {
+            metric: "LLM Judge",
+            passed: llmResult.score >= config.passThreshold,
+            score: llmResult.score,
+            details: `Score: ${llmResult.score.toFixed(2)}/${config.passThreshold.toFixed(2)} - ${llmResult.reason}`,
+          };
+
+          evaluation.results.push(llmJudgeResult);
+
+          // Update overall passed status based on all results
+          evaluation.passed = evaluation.results.every((r) => r.passed);
+
+          console.log(
+            `LLM Judge score: ${llmResult.score.toFixed(2)} (threshold: ${config.passThreshold})`,
+          );
+          console.log(`Reason: ${llmResult.reason}`);
+        } catch (error) {
+          console.error("LLM Judge evaluation failed:", error);
+
+          // Add failed LLM judge result
+          evaluation.results.push({
+            metric: "LLM Judge",
+            passed: false,
+            score: 0,
+            details: `Evaluation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+          });
+        }
       }
     }
   } finally {
@@ -148,3 +189,4 @@ export async function evaluate(
 // Re-export types
 export { Config, Workflow, WorkflowStep } from "./config.js";
 export { WorkflowEvaluation, EvaluationResult } from "./deterministic.js";
+export { runLlmJudge, LlmJudgeResult } from "./llm-judge.js";

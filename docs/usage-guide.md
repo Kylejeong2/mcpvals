@@ -12,6 +12,7 @@ This guide shows you how to use MCPVals to evaluate your MCP servers, with speci
   - [3. Tool Call Health](#3-tool-call-health)
 - [Advanced Configuration](#advanced-configuration)
 - [Interpreting Results](#interpreting-results)
+- [Using the LLM Judge](#using-the-llm-judge)
 
 ## Installation
 
@@ -470,3 +471,62 @@ npx mcpvals eval ./tests/mcp-eval.config.json || exit 1
 - Use `--reporter json` to see detailed metadata
 - Check if your `expectedState` is too specific
 - Verify tool arguments are being passed correctly
+
+## Using the LLM Judge
+
+In addition to deterministic metrics, MCPVals supports evaluating workflows using an LLM as a judge. This is useful for evaluating aspects that are hard to quantify with deterministic rules, such as:
+
+- Quality of responses
+- Tone and style
+- Completeness of answers
+- Appropriateness of tool usage
+
+### Configuration
+
+To enable the LLM judge, add the following to your configuration file:
+
+```json
+{
+  "llmJudge": true,
+  "judgeModel": "gpt-4o",
+  "openaiKey": "your-openai-api-key",
+  "passThreshold": 0.7
+}
+```
+
+You can also set the `OPENAI_API_KEY` environment variable instead of including it in the config file.
+
+### Running with LLM Judge
+
+Use the `--llm` flag when running the evaluation:
+
+```bash
+npx mcpvals eval path/to/config.json --llm
+```
+
+### How It Works
+
+The LLM judge:
+
+1. Takes the conversation history from the workflow
+2. Examines the expected state
+3. Evaluates how well the conversation achieved the goal
+4. Returns a score (0-1) and explanation
+
+The score is compared against the `passThreshold` to determine if the evaluation passes.
+
+### Example Output
+
+```
+Workflow: Basic Math Operations ✓ PASSED
+Overall Score: 100%
+----------------------------------------
+  ✓ End-to-End Success: 100%
+    Successfully reached expected state: "42"
+  ✓ Tool Invocation Order: 100%
+    All 3 tools called in correct order
+  ✓ Tool Call Health: 100%
+    All 3 tool calls completed successfully
+  ✓ LLM Judge: 95%
+    Score: 0.95/0.70 - The conversation successfully achieved all the intended goals by correctly calculating 5+3=8, 10-4=6, and 6*7=42. The tool calls were appropriate, using the add, subtract, and multiply tools respectively. The interaction was natural and complete.
+```

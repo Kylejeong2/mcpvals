@@ -54,6 +54,16 @@ export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
 export type ServerConfig = z.infer<typeof ServerSchema>;
 
 /**
+ * Expand environment variables in a string
+ * Handles ${VAR_NAME} syntax
+ */
+function expandEnvVars(str: string): string {
+  return str.replace(/\${([^}]+)}/g, (match, varName) => {
+    return process.env[varName] || match;
+  });
+}
+
+/**
  * Load and validate configuration from a file
  */
 export async function loadConfig(configPath: string): Promise<Config> {
@@ -64,11 +74,23 @@ export async function loadConfig(configPath: string): Promise<Config> {
     if (configPath.endsWith(".json")) {
       const content = await readFile(absolutePath, "utf-8");
       const rawConfig = JSON.parse(content);
+
+      // Process environment variables in openaiKey
+      if (rawConfig.openaiKey && typeof rawConfig.openaiKey === "string") {
+        rawConfig.openaiKey = expandEnvVars(rawConfig.openaiKey);
+      }
+
       return ConfigSchema.parse(rawConfig);
     } else {
       // Dynamic import for .ts/.js files
       const module = await import(absolutePath);
       const rawConfig = module.default || module;
+
+      // Process environment variables in openaiKey
+      if (rawConfig.openaiKey && typeof rawConfig.openaiKey === "string") {
+        rawConfig.openaiKey = expandEnvVars(rawConfig.openaiKey);
+      }
+
       return ConfigSchema.parse(rawConfig);
     }
   } catch (error) {

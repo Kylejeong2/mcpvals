@@ -59,6 +59,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.0.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
+    "ai": "^3.0.0",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "execa": "^8.0.1",
@@ -80,14 +81,8 @@
     "vitest": "^3.2.1",
     "zod": "^3.25.50"
   },
-  "peerDependencies": {
-    "ai": "^3.0.0"
-  },
-  "peerDependenciesMeta": {
-    "ai": {
-      "optional": true
-    }
-  },
+  "peerDependencies": {},
+  "peerDependenciesMeta": {},
   "packageManager": "pnpm@9.4.0",
   "publishConfig": {
     "access": "public",

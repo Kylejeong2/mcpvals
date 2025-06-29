@@ -220,6 +220,24 @@ Enable AI-powered evaluation for subjective criteria:
 npx mcpvals eval config.json --llm
 ```
 
+Configuration options:
+
+```json
+{
+  "llmJudge": true,
+  "openaiKey": "your-openai-api-key",
+  "judgeModel": "gpt-4o",
+  "passThreshold": 0.7
+}
+```
+
+The LLM judge evaluates:
+
+- Response quality and relevance
+- Appropriateness of tool usage
+- Conversation flow and completeness
+- Achievement of the intended goal
+
 Requires `openaiKey` in config or `OPENAI_API_KEY` environment variable.
 
 ## License

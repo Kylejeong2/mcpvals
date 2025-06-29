@@ -1,0 +1,35 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["example/simple-mcp-server.js"]
+  },
+  "workflows": [
+    {
+      "name": "Basic Math Operations",
+      "description": "Tests basic math operations",
+      "steps": [
+        {
+          "user": "What is 5 + 3?",
+          "expectTools": ["add"],
+          "expectedState": "8"
+        },
+        {
+          "user": "What is 10 - 4?",
+          "expectTools": ["subtract"],
+          "expectedState": "6"
+        },
+        {
+          "user": "What is 6 * 7?",
+          "expectTools": ["multiply"],
+          "expectedState": "42"
+        }
+      ]
+    }
+  ],
+  "timeout": 5000,
+  "llmJudge": true,
+  "openaiKey": "${OPENAI_API_KEY}",
+  "judgeModel": "gpt-4o",
+  "passThreshold": 0.7
+}
