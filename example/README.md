@@ -166,3 +166,31 @@ To deploy the simple math server to a cloud service:
 4. **Google Cloud Run**: Containerize and deploy
 
 Example deployment guide coming soon!
+
+## 🆕 TypeScript Quick-Start
+
+If you prefer programmatic control, use the ESM-friendly API:
+
+```bash
+pnpm add -D tsx typescript @mcpvals
+```
+
+```ts
+// run-evaluation.ts
+import { evaluate } from "@mcpvals";
+
+await evaluate("./example/simple-server-eval.config.ts", {
+  debug: true,
+  reporter: "console",
+});
+```
+
+Run it with:
+
+```bash
+pnpm exec tsx run-evaluation.ts
+```
+
+A convenience script is already wired up: `pnpm run test:ts`.
+
+> See `docs/library-usage.md` for the full specification.

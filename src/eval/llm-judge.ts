@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { generateText, LanguageModelV1 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { TraceStore, ConversationMessage } from "./trace.js";
 import { Workflow } from "./config.js";
@@ -92,7 +92,7 @@ export async function runLlmJudge(args: LlmJudgeArgs): Promise<LlmJudgeResult> {
 
     // Call LLM with the configured provider
     const { text } = await generateText({
-      model: openai(model),
+      model: openai(model) as unknown as LanguageModelV1,
       prompt,
       maxTokens: 512,
       temperature: 0.1, // Low temperature for consistent evaluation

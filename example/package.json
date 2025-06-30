@@ -8,13 +8,15 @@
     "test:simple": "mcpvals eval ./simple-server-eval.config.json",
     "test:weather": "mcpvals eval ./weather-server-eval.config.json",
     "test:github": "mcpvals eval ./github-server-eval.config.json",
-    "test:remote": "mcpvals eval ./remote-server-eval.config.json"
+    "test:remote": "mcpvals eval ./remote-server-eval.config.json",
+    "test:ts": "tsx run-evaluation.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0"
   },
   "devDependencies": {
-    "@mcpvals": "^0.0.1"
+    "@mcpvals": "^0.0.1",
+    "tsx": "^4.7.0"
   },
   "engines": {
     "node": ">=18.0.0"
