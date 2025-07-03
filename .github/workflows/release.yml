@@ -9,10 +9,6 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
 jobs:
   release:
     name: Release
@@ -37,6 +33,12 @@ jobs:
       - name: Install Dependencies
         id: pnpm-install
         run: pnpm install --frozen-lockfile
+
+      - name: Build Package
+        run: pnpm build
+
+      - name: Run Tests
+        run: pnpm test
 
       - name: Create Release PR or Publish Packages
         uses: changesets/action@v1
