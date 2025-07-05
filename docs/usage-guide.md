@@ -1,6 +1,6 @@
 # MCPVals Usage Guide
 
-This guide shows you how to use MCPVals to evaluate your MCP servers, with specific examples for testing each of the three core metrics individually.
+This guide shows you how to use MCPVals to evaluate your MCP servers. MCPVals uses Claude to autonomously execute your test workflows based on natural language descriptions, then evaluates the results using deterministic metrics.
 
 ## Table of Contents
 
@@ -23,6 +23,18 @@ pnpm add @mcpvals
 # or
 yarn add @mcpvals
 ```
+
+### Prerequisites
+
+1. **Node.js ≥ 18** - Required for native fetch and ESM support
+2. **Anthropic API Key** - Required for Claude to execute workflows
+   ```bash
+   export ANTHROPIC_API_KEY="sk-ant-..."
+   ```
+3. **OpenAI API Key** (Optional) - Only needed for LLM judge feature
+   ```bash
+   export OPENAI_API_KEY="sk-..."
+   ```
 
 ## Basic Usage
 
@@ -79,7 +91,7 @@ This metric validates that your workflow reaches the expected final state. It ch
       "description": "Verify the calculator produces correct results",
       "steps": [
         {
-          "user": "What is 15 + 27?",
+          "user": "Calculate 15 + 27 and tell me the result",
           "expectedState": "42"
         }
       ]
@@ -87,6 +99,13 @@ This metric validates that your workflow reaches the expected final state. It ch
   ]
 }
 ```
+
+**How it works:**
+
+1. Claude receives the user prompt "Calculate 15 + 27 and tell me the result"
+2. Claude identifies available tools (e.g., `add`, `calculate`)
+3. Claude calls the appropriate tool with arguments
+4. The evaluator checks if the final output contains "42"
 
 **What it checks:**
 
@@ -119,22 +138,22 @@ This metric ensures tools are called in the expected sequence, which is critical
       "description": "Verify tools are called in correct sequence",
       "steps": [
         {
-          "user": "Get weather for San Francisco",
-          "expectTools": ["get_weather"]
-        },
-        {
-          "user": "Find Italian restaurants nearby",
-          "expectTools": ["get_location", "search_restaurants"]
-        },
-        {
-          "user": "Make a reservation at the first one",
-          "expectTools": ["make_reservation"]
+          "user": "I'm in San Francisco. Get the weather, find Italian restaurants nearby, and make a reservation at the first one.",
+          "expectedState": "reservation confirmed"
         }
+      ],
+      "expectTools": [
+        "get_weather",
+        "get_location",
+        "search_restaurants",
+        "make_reservation"
       ]
     }
   ]
 }
 ```
+
+**Key change:** Instead of micro-managing each step, we give Claude a complete task and verify it uses the expected tools in order.
 
 **What it checks:**
 
@@ -145,9 +164,10 @@ This metric ensures tools are called in the expected sequence, which is critical
 
 **Tips for Tool Order Testing:**
 
+- Use workflow-level `expectTools` for cleaner configs
 - List tools in the exact order you expect them
-- Tools from all steps are concatenated into one sequence
-- Extra tool calls after the expected ones don't cause failure
+- The LLM might call additional tools - only the expected sequence matters
+- Partial credit is given (e.g., 3/4 tools correct = 75% score)
 
 ### 3. Tool Call Health
 
@@ -221,22 +241,23 @@ This metric verifies that all tool calls complete successfully without errors.
       "description": "Test all three metrics",
       "steps": [
         {
-          "user": "Calculate the sum of 10 and 20",
-          "expectTools": ["add"],
-          "expectedState": "30"
-        },
-        {
-          "user": "Now multiply the result by 2",
-          "expectTools": ["multiply"],
+          "user": "Calculate the sum of 10 and 20, then multiply the result by 2. What's the final answer?",
           "expectedState": "60"
         }
-      ]
+      ],
+      "expectTools": ["add", "multiply"]
     }
   ],
   "timeout": 30000,
   "llmJudge": false
 }
 ```
+
+This single workflow tests:
+
+- **End-to-End Success**: Final output should contain "60"
+- **Tool Order**: Should call `add` then `multiply`
+- **Tool Health**: Both tools should execute without errors
 
 ### TypeScript Configuration
 
@@ -441,14 +462,16 @@ This will:
 
 ## Best Practices
 
-1. **Start Simple**: Test one metric at a time when debugging
-2. **Use Descriptive Names**: Make workflow and step names clear
-3. **Test Edge Cases**: Include error scenarios and boundary conditions
-4. **Version Your Tests**: Keep test configs in version control
-5. **CI/CD Integration**: Run evaluations in your build pipeline
+1. **Write Natural Prompts**: Describe tasks as you would to a human assistant
+2. **Use Workflow-Level expectTools**: Cleaner than per-step tool expectations
+3. **One Intent Per Step**: Each step should be a complete user request
+4. **Test Edge Cases**: Include error scenarios and boundary conditions
+5. **Version Your Tests**: Keep test configs in version control
+6. **CI/CD Integration**: Run evaluations in your build pipeline
 
 ```bash
 # In your CI/CD pipeline
+export ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
 npx mcpvals eval ./tests/mcp-eval.config.json || exit 1
 ```
 

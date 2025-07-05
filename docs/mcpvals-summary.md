@@ -2,7 +2,7 @@
 
 ## Overview
 
-MCPVals is a TypeScript/Next.js evaluation library for Model Context Protocol (MCP) servers. It provides deterministic metrics to validate MCP server behavior and optional LLM-based evaluation capabilities.
+MCPVals is a TypeScript evaluation library for Model Context Protocol (MCP) servers. It uses Claude to autonomously execute test workflows based on high-level user intents, then evaluates the results using deterministic metrics and optional LLM-based grading.
 
 ## What We Built
 
@@ -52,7 +52,13 @@ MCPVals is a TypeScript/Next.js evaluation library for Model Context Protocol (M
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
 │   Config    │────▶│ ServerRunner │────▶│ MCP Server  │
 │   Loader    │     └──────────────┘     └─────────────┘
-└─────────────┘              │
+└─────────────┘              │                    │
+                             ▼                    │
+                      ┌─────────────┐             │
+                      │   Claude    │◀────────────┘
+                      │ (Anthropic) │  Tool Calls
+                      └─────────────┘
+                             │
                              ▼
                       ┌─────────────┐
                       │ TraceStore  │
@@ -72,11 +78,12 @@ MCPVals is a TypeScript/Next.js evaluation library for Model Context Protocol (M
 
 ## Key Design Decisions
 
-1. **Deterministic First**: Focus on objective, measurable metrics before adding LLM judgment
-2. **Transport Agnostic**: Support both stdio and HTTP-based MCP servers
-3. **Extensible**: Easy to add new metrics, reporters, or server types
-4. **TypeScript Native**: Full type safety and IDE support
-5. **CLI & Library**: Usable as both command-line tool and programmatic API
+1. **LLM-Driven Execution**: Claude interprets high-level intents and autonomously executes workflows
+2. **Deterministic Evaluation**: Objective metrics evaluate the LLM-generated trace
+3. **Transport Agnostic**: Support both stdio and HTTP-based MCP servers
+4. **Natural Language Tests**: Write tests as you would describe tasks to a human
+5. **TypeScript Native**: Full type safety and IDE support
+6. **CLI & Library**: Usable as both command-line tool and programmatic API
 
 ## Usage Examples
 
@@ -95,9 +102,11 @@ npx mcpvals eval ./config.json --debug --reporter json --llm
 ```typescript
 import { evaluate } from "@mcpvals";
 
+// Requires ANTHROPIC_API_KEY environment variable
 const report = await evaluate("./config.json", {
   debug: true,
   reporter: "console",
+  llmJudge: false, // Optional GPT-4 grading
 });
 ```
 

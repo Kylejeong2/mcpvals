@@ -1,13 +1,22 @@
 # LLM Judge
 
-This document outlines the architecture and implementation steps to add **LLM-as-a-Judge** evaluation to MCPVals using the [Vercel AI SDK](https://sdk.vercel.ai/docs).
+This document describes the LLM Judge feature in MCPVals, which provides qualitative evaluation of workflows beyond deterministic metrics.
 
-## 1 – Goals
+## Overview
 
-1. **Qualitative Scoring** – Let an LLM grade workflows that deterministic rules can't capture (e.g. answer relevance, tone, completeness).
-2. **Configurable** – Enable/disable globally (`llmJudge: true`) or per-run (`--llm` flag).
-3. **Non-Blocking** – Run after deterministic metrics; if the call fails, deterministic results still stand.
-4. **Pluggable** – Support multiple providers (OpenAI, Anthropic, xAI) via AI SDK.
+The LLM Judge uses GPT-4 to evaluate the quality of LLM-driven workflow executions. Since the primary workflow execution already uses Claude, the judge provides an independent assessment of:
+
+- Answer relevance and completeness
+- Appropriate tool usage
+- Conversation naturalness
+- Achievement of user intent
+
+## Architecture
+
+1. **Separation of Concerns**: Claude executes workflows, GPT-4 judges them
+2. **Post-Execution**: Runs after deterministic metrics are calculated
+3. **Non-Blocking**: Failures don't affect deterministic results
+4. **Configurable**: Enable via config (`llmJudge: true`) and CLI (`--llm`)
 
 ## 2 – High-Level Flow
 
@@ -59,51 +68,46 @@ Provide: {"score":0-1,"reason":"…"}
 2. Concatenate tool results & assistant responses
 3. Trim to model max-tokens (AI SDK handles truncation if we set `maxTokens`)
 
-## 5 – Implementation Steps
+## Current Implementation
 
-1. **New Config Options** (`config.ts`)
-   ```ts
-   llmJudge: z.boolean().default(false),
-   openaiKey: z.string().optional(),
-   judgeModel: z.string().default('gpt-4o'),
-   passThreshold: z.number().min(0).max(1).default(0.8)
-   ```
-2. **Add Dependency**
-   ```bash
-   pnpm add ai @ai-sdk/openai
-   ```
-3. **Create `src/eval/llm-judge.ts`**
+The LLM Judge is fully implemented in MCPVals:
 
-   ```ts
-   import { generateText } from "ai";
-   import { openai } from "@ai-sdk/openai";
+### Configuration
 
-   export async function runLlmJudge(args: {
-     model: string;
-     apiKey: string;
-     prompt: string;
-   }): Promise<LlmJudgeResult> {
-     const { text } = await generateText({
-       model: openai(args.model, { apiKey: args.apiKey }),
-       prompt: args.prompt,
-       maxTokens: 512,
-     });
-     return JSON.parse(text) as LlmJudgeResult;
-   }
-   ```
+```ts
+{
+  llmJudge: true,              // Enable LLM judge
+  openaiKey: "sk-...",         // Or use OPENAI_API_KEY env var
+  judgeModel: "gpt-4o",        // Model to use for judging
+  passThreshold: 0.8           // Score threshold for passing
+}
+```
 
-4. **Update `evaluate()` in `index.ts`**
-   1. Build prompt from `traceStore` + workflow.
-   2. Call `runLlmJudge()`.
-   3. Push result into `evaluation.results`.
-5. **Reporter Updates**
-   - Console reporter shows LLM score & reason.
-   - JSON output already serializes it.
-6. **CLI Flag**
-   - `--llm` already exists; map to `EvaluateOptions.llmJudge`.
-7. **Error Handling**
-   - Catch JSON parse errors – set `passed = false`, `score = 0`, `reason = 'Invalid LLM output'`.
-   - Timeout / API errors – mark metric as failed but don't crash run.
+### Usage
+
+```bash
+# Enable via CLI flag
+npx mcpvals eval config.json --llm
+
+# Or set in config file
+{
+  "llmJudge": true,
+  "openaiKey": "${OPENAI_API_KEY}"
+}
+```
+
+### How It Works
+
+1. **Conversation Serialization**: Last 20 messages + tool calls are formatted
+2. **Prompt Construction**: Includes workflow context and expected state
+3. **GPT-4 Evaluation**: Returns `{ score: 0-1, reason: "..." }`
+4. **Result Integration**: Added as 4th metric in evaluation results
+
+### Error Handling
+
+- Invalid JSON responses: Score = 0, but doesn't crash
+- API failures: Marked as failed metric, deterministic results preserved
+- Missing API key: Skips LLM judge, continues with deterministic metrics
 
 ## 6 – Security & Cost
 

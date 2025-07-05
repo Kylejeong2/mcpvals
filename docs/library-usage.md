@@ -185,7 +185,31 @@ The `timeout` field cascades to:
 
 ---
 
-## 4. Deterministic Metrics (0-1 scale)
+## 4. How MCPVals Works
+
+### Execution Flow
+
+1. **Configuration Loading**: Parses your test config (JSON/TS)
+2. **Server Startup**: Launches MCP server (stdio process or connects to HTTP endpoint)
+3. **LLM-Driven Execution**:
+   - Claude receives high-level user prompts from your config
+   - Claude examines available MCP tools
+   - Claude autonomously plans and executes tool calls
+   - All interactions are recorded in TraceStore
+4. **Deterministic Evaluation**: The recorded trace is evaluated against your expectations
+5. **Optional LLM Judge**: GPT-4 can provide qualitative assessment
+6. **Reporting**: Results are formatted and output
+
+### Why LLM-Driven?
+
+Traditional test frameworks require scripting exact tool sequences. MCPVals instead:
+
+- **Tests real-world usage**: LLMs will be the primary consumers of MCP servers
+- **Discovers edge cases**: The LLM might find unexpected ways to accomplish tasks
+- **Reduces test maintenance**: Natural language prompts are more stable than rigid scripts
+- **Validates tool descriptions**: Tests whether your tools are discoverable and usable
+
+## 5. Deterministic Metrics (0-1 scale)
 
 | #   | Metric                | Pass Criteria                                                  |
 | --- | --------------------- | -------------------------------------------------------------- |
@@ -201,7 +225,7 @@ We don't yet validate against the server-declared _output_ schema – PRs welcom
 
 ---
 
-## 5. LLM Judge (Optional)
+## 6. LLM Judge (Optional)
 
 Add subjective grading when deterministic checks are not enough (e.g. tone, completeness).
 
@@ -226,7 +250,7 @@ CLI flag `--llm` must also be supplied. The judge:
 
 ---
 
-## 6. Library API
+## 7. Library API
 
 ```ts
 import { evaluate } from "@mcpvals";
@@ -240,7 +264,7 @@ const { passed, evaluations } = await evaluate("./mcp-eval.config.json", {
 if (!passed) process.exit(1);
 ```
 
-### 6.1 Types
+### 7.1 Types
 
 Re-exported for convenience:
 
@@ -250,7 +274,7 @@ Re-exported for convenience:
 
 ---
 
-## 7. Reporter Outputs
+## 8. Reporter Outputs
 
 1. **console** – coloured, human-friendly (see screenshot below).
 2. **json** – full `EvaluationReport` object.
@@ -258,18 +282,18 @@ Re-exported for convenience:
 
 ---
 
-## 8. Extensibility
+## 9. Extensibility
 
-| Surface            | How                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------- |
-| Custom reporter    | import `ConsoleReporter` for reference; implement `.report(evaluations)`.             |
-| Additional metrics | Extend `DeterministicEvaluator` or plug a post-processor.                             |
-| New transports     | `ServerRunner.start*` is discriminated on `server.transport`. Add a `ws` case.        |
-| Fine-grained args  | Currently we call tools with `{}` (empty). Parse from `step.user` to improve realism. |
+| Surface            | How                                                                            |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Custom reporter    | import `ConsoleReporter` for reference; implement `.report(evaluations)`.      |
+| Additional metrics | Extend `DeterministicEvaluator` or plug a post-processor.                      |
+| New transports     | `ServerRunner.start*` is discriminated on `server.transport`. Add a `ws` case. |
+| Fine-grained args  | The LLM now determines tool arguments based on the user prompt                 |
 
 ---
 
-## 9. Security Checklist
+## 10. Security Checklist
 
 MCPVals itself is "just" an evaluator, but you still spawn arbitrary child processes or hit remote URLs. We therefore:
 
@@ -280,7 +304,7 @@ MCPVals itself is "just" an evaluator, but you still spawn arbitrary child proce
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom                            | Fix                                                                              |
 | ---------------------------------- | -------------------------------------------------------------------------------- |
@@ -291,7 +315,7 @@ MCPVals itself is "just" an evaluator, but you still spawn arbitrary child proce
 
 ---
 
-## 11. Roadmap
+## 12. Roadmap
 
 - [ ] JUnit reporter
 - [ ] Output-schema validation
@@ -301,7 +325,7 @@ MCPVals itself is "just" an evaluator, but you still spawn arbitrary child proce
 
 ---
 
-## 12. Acknowledgements
+## 13. Acknowledgements
 
 - [Model Context Protocol](https://modelcontextprotoco.lol) – for the SDK
 - [Vercel AI SDK](https://sdk.vercel.ai) – for LLM integration

@@ -2,15 +2,24 @@
 
 ## 1. Purpose
 
-Provide a **TypeScript / Next.js** library & CLI that can automatically **evaluate MCP servers** (local `stdio` processes or remote Streaming‐HTTP endpoints). The evaluator focuses on three core, deterministic metrics and can optionally delegate to an LLM judge via Vercel AI SDK.
+Provide a **TypeScript / Next.js** library & CLI that can automatically **evaluate MCP servers** (local `stdio` processes or remote Streaming‐HTTP endpoints). The evaluator uses an LLM (Claude) to autonomously execute workflows based on high-level user intents, then evaluates the results using three core deterministic metrics and an optional LLM judge.
 
 ### Key Metrics
 
-1. **End-to-End Workflow Success** – Did the LLM reach the desired end state defined by the test author?
-2. **Tool Invocation Order** – Were the _expected_ tools called, in the _expected_ order, with the _expected_ arguments?
-3. **Tool Call Health** – Did every tool call return successfully? • No thrown exceptions • HTTP ≥ 200 < 300 • Result validates against the tool's `zod` schema / description.
+1. **End-to-End Workflow Success** – Did the LLM-driven workflow reach the desired end state defined by the test author?
+2. **Tool Invocation Order** – Were the _expected_ tools called, in the _expected_ order?
+3. **Tool Call Health** – Did every tool call return successfully? • No thrown exceptions • HTTP ≥ 200 < 300 • Result validates against the tool's schema.
 
-If any metric fails the run is **red**. When all pass it is **green**. A fourth, optional metric — _LLM qualitative correctness_ — can be enabled, using `streamText()` or `generateText()` from the AI SDK to have GPT-4o grade the run.
+If any metric fails the run is **red**. When all pass it is **green**. A fourth, optional metric — _LLM qualitative correctness_ — can be enabled, using `generateText()` from the AI SDK to have GPT-4o grade the run.
+
+### LLM-Driven Approach
+
+Unlike traditional test frameworks that script exact sequences, MCPVals uses Claude to:
+
+- Interpret high-level user intents
+- Plan appropriate tool usage
+- Execute tools in a natural sequence
+- Handle unexpected scenarios adaptively
 
 ---
 
@@ -24,22 +33,25 @@ flowchart TD
 
     subgraph Core
         B --> C(ServerRunner)
-        C -->|raw traces| D(TraceStore)
-        D --> E(DeterministicEvaluator)
-        D --> F(LLMJudger)
-        E --> G(Reporter)
-        F --> G
+        C -->|LLM execution| D(Claude/Anthropic)
+        D -->|tool calls| C
+        C -->|raw traces| E(TraceStore)
+        E --> F(DeterministicEvaluator)
+        E --> G(LLMJudger)
+        F --> H(Reporter)
+        G --> H
     end
 ```
 
 - **ConfigLoader** – Parses `mcp-eval.config.{json|ts}`.
-- **ServerRunner** – Spins up and communicates with the target MCP server using the Model Context Protocol SDK client. Supports:
+- **ServerRunner** – Manages MCP server lifecycle and LLM-driven workflow execution:
   - `stdio`: `execa` child-process with pipes.
-  - `shttp`: streaming-HTTP (SSE) via fetch / `EventSource`.
-- **TraceStore** – Canonical log of MCP messages exchanged during a run.
-- **DeterministicEvaluator** – Pure functions that score the run according to the 3 metrics.
-- **LLMJudger** (optional) – Uses AI SDK → OpenAI/Anthropic to grade complex/subjective criteria.
-- **Reporter** – Emits results in **pretty console**, **JSON** (`--json`), or **JUnit XML** (`--junit`).
+  - `shttp`: streaming-HTTP (SSE) via `StreamableHTTPClientTransport`.
+- **Claude/Anthropic** – Interprets user intents and autonomously executes tool calls.
+- **TraceStore** – Records all conversation messages and tool interactions.
+- **DeterministicEvaluator** – Scores the LLM-generated trace according to the 3 metrics.
+- **LLMJudger** (optional) – Uses AI SDK → OpenAI to grade subjective criteria.
+- **Reporter** – Emits results in **pretty console**, **JSON**, or **JUnit XML** (planned).
 
 ---
 
@@ -70,11 +82,12 @@ export const WorkflowSchema = z.object({
   description: z.string().optional(),
   steps: z.array(
     z.object({
-      user: z.string(), // user message
-      expectTools: z.array(z.string()).optional(), // expected tools (order matters)
-      expectedState: z.string().optional(), // free-form description for LLM judge
+      user: z.string(), // high-level user intent
+      expectTools: z.array(z.string()).optional(), // deprecated - use workflow-level
+      expectedState: z.string().optional(), // substring to find in final output
     }),
   ),
+  expectTools: z.array(z.string()).optional(), // expected tools for entire workflow
 });
 
 export const ServerSchema = z.discriminatedUnion("transport", [
@@ -121,29 +134,36 @@ docs/
   eval-library-spec.md   # ← this file
 ```
 
-### Changes to existing scaffolding
+### Key Dependencies
 
-1. **package.json** –
-   - Rename package to `@mcpvals` (or publish as a separate workspace).
-   - Add deps: `@modelcontextprotocol/sdk`, `zod`, `execa`, `chalk`, `@ai-sdk/openai`.
-2. **tsconfig.json** – Include `src/eval/**/*`.
-3. **CLI** – Wire new `eval` subcommand in `src/cli/index.ts`.
+1. **Core**:
+   - `@modelcontextprotocol/sdk` - MCP client/server communication
+   - `@ai-sdk/anthropic` - Claude for workflow execution
+   - `@ai-sdk/openai` - GPT-4 for optional LLM judge
+   - `ai` - Vercel AI SDK for LLM orchestration
+2. **Utilities**:
+   - `zod` - Configuration validation
+   - `execa` - Process management for stdio servers
+   - `chalk` - Console output formatting
+   - `commander` - CLI framework
 
 ---
 
 ## 6. Deterministic Evaluation Algorithms
 
 1. **End-to-End Success**
-   - Last assistant message must contain `desiredState` (string match or regex) OR last tool result satisfies `expectedState` predicate.
+   - Last assistant message must contain `expectedState` (case-insensitive substring match) OR last tool result contains the expected state.
 2. **Tool Invocation Order**
-   - Extract ordered list of `tool.name` from trace.
-   - Compare to `expectTools` array using deep equality → fail index of first mismatch.
+   - Extract ordered list of `tool.name` from LLM-generated trace.
+   - Compare to workflow-level `expectTools` array (or flattened step-level arrays for backwards compatibility).
+   - Partial credit given: score = matched_tools / expected_tools.
 3. **Tool Call Health**
-   - For each tool result:
+   - For each tool result in the trace:
+     - Check for errors or exceptions.
      - If transport is HTTP → response status 200-299.
-     - Validate returned payload against tool's param/return schemas.
+     - Future: Validate against tool's output schema.
 
-Scoring: pass = 1, fail = 0. Produce aggregate as percentage.
+Scoring: Each metric 0-1, overall = average. Workflow passes only if all metrics pass.
 
 ---
 
