@@ -3,7 +3,9 @@
     "transport": "shttp",
     "url": "https://mcp-server-fetch.vercel.app/sse",
     "headers": {
-      "User-Agent": "MCPVals/1.0"
+      "User-Agent": "MCPVals/1.0",
+      "Accept": "text/event-stream",
+      "X-Custom-Header": "example-value"
     }
   },
   "workflows": [

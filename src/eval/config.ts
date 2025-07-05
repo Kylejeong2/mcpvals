@@ -20,6 +20,11 @@ export const WorkflowSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   steps: z.array(WorkflowStepSchema),
+  // Optional: Expected tools for the entire workflow (not per-step)
+  expectTools: z
+    .array(z.string())
+    .optional()
+    .describe("Expected tools to be called across all steps"),
 });
 
 // Server configuration schema

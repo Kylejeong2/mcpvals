@@ -9,57 +9,44 @@
   },
   "workflows": [
     {
-      "name": "search-repositories",
-      "description": "Test searching GitHub repositories",
+      "name": "search-and-explore-repos",
+      "description": "Test repository search and exploration",
       "steps": [
         {
-          "user": "Search for repositories about Model Context Protocol",
-          "expectTools": ["search_repositories"],
+          "user": "Search for repositories about Model Context Protocol and tell me about the most popular one",
           "expectedState": "modelcontextprotocol"
         }
-      ]
+      ],
+      "expectTools": ["search_repositories"]
     },
     {
-      "name": "create-and-manage-issue",
+      "name": "comprehensive-repo-analysis",
+      "description": "Test multiple GitHub operations",
+      "steps": [
+        {
+          "user": "For the modelcontextprotocol/servers repository: read the README.md file, search for TypeScript files in the src directory, and list any open pull requests",
+          "expectedState": "Model Context Protocol"
+        }
+      ],
+      "expectTools": ["read_file", "search_code", "search_pull_requests"]
+    },
+    {
+      "name": "issue-management-workflow",
       "description": "Test issue creation and management",
       "steps": [
         {
-          "user": "Create an issue in test-repo with title 'Test Issue' and body 'This is a test'",
-          "expectTools": ["create_issue"]
-        },
-        {
-          "user": "List all open issues in test-repo",
-          "expectTools": ["search_issues"],
+          "user": "Create an issue in test-repo with title 'Test Issue' and body 'This is a test', then list all open issues to confirm it was created",
           "expectedState": "Test Issue"
         }
-      ]
+      ],
+      "expectTools": ["create_issue", "search_issues"]
     },
     {
-      "name": "file-operations",
-      "description": "Test file reading and searching",
+      "name": "branch-operations",
+      "description": "Test branch creation",
       "steps": [
         {
-          "user": "Read the README.md file from modelcontextprotocol/servers repository",
-          "expectTools": ["read_file"],
-          "expectedState": "Model Context Protocol"
-        },
-        {
-          "user": "Search for TypeScript files in the src directory",
-          "expectTools": ["search_code"],
-          "expectedState": ".ts"
-        }
-      ]
-    },
-    {
-      "name": "pull-request-workflow",
-      "description": "Test pull request operations",
-      "steps": [
-        {
-          "user": "List open pull requests in modelcontextprotocol/servers",
-          "expectTools": ["search_pull_requests"]
-        },
-        {
-          "user": "Create a new branch called 'test-branch'",
+          "user": "Create a new branch called 'test-branch' in the current repository",
           "expectTools": ["create_branch"]
         }
       ]

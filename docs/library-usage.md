@@ -32,9 +32,20 @@ npx mcpvals eval mcp-eval.config.json --llm --reporter json > report.json
 1. **Node.js ≥ 18** – we rely on native `fetch`, `EventSource`, and `fs/promises`.
 2. **pnpm / npm / yarn** – whichever you prefer, MCPVals is published as an ESM‐only package.
 3. **MCP Server** – local `stdio` binary **or** remote Streaming-HTTP endpoint.
-4. **(Optional) OpenAI / Anthropic key** – only required for the LLM judge.
+4. **Anthropic API Key** – Required for workflow execution (uses Claude to drive tool calls). Set via `ANTHROPIC_API_KEY` environment variable.
+5. **(Optional) OpenAI key** – Only required if using the LLM judge feature.
 
 > Caveat: ESM-only means you **cannot** `require("@mcpvals")` from a CommonJS project. Either enable `"type": "module"` or use dynamic `import()`.
+
+### Setting up API Keys
+
+```bash
+# Required for basic evaluation
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Optional for LLM judge
+export OPENAI_API_KEY="sk-..."
+```
 
 ---
 
@@ -103,17 +114,67 @@ export default {
 - `transport`: `stdio` or `shttp` (Streaming HTTP). Future: `ws`.
 - `command`/`args`: only for `stdio`. If `command === "node"` we auto-swap in `process.execPath` so that nvm/npm wrappers don't break when the lib is executed under a different Node version.
 - `env`: merged into the child process. **Undefined** values are filtered – keeps shells happy.
-- `url`/`headers`: only for `shttp`.
+- `url`/`headers`: only for `shttp`. Headers support environment variable interpolation (e.g., `"Authorization": "Bearer ${API_TOKEN}"`).
+
+#### Authentication Headers Example:
+
+```json
+{
+  "server": {
+    "transport": "shttp",
+    "url": "https://api.example.com/mcp",
+    "headers": {
+      "Authorization": "Bearer ${API_TOKEN}",
+      "X-API-Key": "${API_KEY}",
+      "Content-Type": "application/json",
+      "Accept": "text/event-stream, application/json"
+    }
+  }
+}
+```
 
 ### 3.2 `workflows[]`
 
+Each workflow contains:
+
+- `name`: Identifier for the workflow
+- `description`: Optional description
+- `steps`: Array of user interactions
+- `expectTools`: Optional array of expected tools for the entire workflow
+
+#### Step Schema
+
 | Field           | Type        | Description                                                                                  |
 | --------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| `user`          | `string`    | Raw user text fed into the LLM / server                                                      |
-| `expectTools`   | `string[]`? | Ordered list – _must_ exactly match for metric #2                                            |
+| `user`          | `string`    | High-level user intent - the LLM will plan how to accomplish this                            |
+| `expectTools`   | `string[]`? | (Deprecated) Use workflow-level `expectTools` instead                                        |
 | `expectedState` | `string`?   | Sub-string the evaluator looks for in the **last assistant message** OR **last tool result** |
 
-> Caveat: `expectTools` across all steps are flattened into one list. Extra tools **after** the expected sequence do **not** currently fail the run. This will be configurable soon (#42).
+#### Best Practices
+
+1. **Write natural prompts**: Instead of micro-managing each tool call, give the LLM a complete task
+2. **Use workflow-level `expectTools`**: List all tools you expect to be used across the entire workflow
+3. **One step per user intent**: Each step should represent a complete user request, not individual actions
+
+**Before (micro-managed):**
+
+```json
+{
+  "steps": [
+    { "user": "Add 5 and 3", "expectTools": ["add"] },
+    { "user": "Multiply by 2", "expectTools": ["multiply"] }
+  ]
+}
+```
+
+**After (LLM-driven):**
+
+```json
+{
+  "steps": [{ "user": "Calculate (5 + 3) * 2" }],
+  "expectTools": ["add", "multiply"]
+}
+```
 
 ### 3.3 Timeouts
 

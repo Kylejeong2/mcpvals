@@ -60,52 +60,42 @@ export async function evaluate(
       // Clear trace store for this workflow
       traceStore.clear();
 
-      // Execute workflow steps
-      for (const step of workflow.steps) {
-        // Simulate user message
+      // Execute workflow with LLM
+      const { success, messages, toolCalls } = await runner.runWorkflowWithLLM(
+        workflow.steps,
+      );
+
+      // Import results into trace store
+      for (const message of messages) {
         traceStore.addMessage({
-          role: "user",
-          content: step.user,
+          role: message.role as "user" | "assistant",
+          content: message.content,
+          timestamp: new Date(),
+        });
+      }
+
+      // Record tool calls
+      for (const toolCall of toolCalls) {
+        const toolCallId = `tool_${Date.now()}_${Math.random()}`;
+        traceStore.addToolCall({
+          id: toolCallId,
+          name: toolCall.name,
+          arguments: toolCall.args,
           timestamp: new Date(),
         });
 
-        // If we have expected tools, call them
-        if (step.expectTools) {
-          for (const toolName of step.expectTools) {
-            try {
-              // Find the tool to get its input schema
-              const tool = tools.find((t) => t.name === toolName);
-              if (!tool) {
-                console.warn(`Expected tool '${toolName}' not found`);
-                continue;
-              }
+        traceStore.addToolResult({
+          id: `result_${Date.now()}`,
+          toolCallId,
+          result: toolCall.result,
+          error: toolCall.error,
+          timestamp: new Date(),
+        });
+      }
 
-              // For demo purposes, use empty arguments
-              // In a real scenario, you'd parse arguments from the user message
-              const args = {};
-
-              console.log(`Calling tool: ${toolName}`);
-              const result = await runner.callTool(toolName, args);
-
-              // Simulate assistant response with tool result
-              traceStore.addMessage({
-                role: "assistant",
-                content: JSON.stringify(result),
-                toolCalls: [
-                  {
-                    id: `call_${Date.now()}`,
-                    name: toolName,
-                    arguments: args,
-                    timestamp: new Date(),
-                  },
-                ],
-                timestamp: new Date(),
-              });
-            } catch (error) {
-              console.error(`Error calling tool ${toolName}:`, error);
-            }
-          }
-        }
+      if (options.debug) {
+        console.log(`Workflow execution ${success ? "succeeded" : "failed"}`);
+        console.log(`Tool calls made: ${toolCalls.length}`);
       }
 
       // Evaluate the workflow
