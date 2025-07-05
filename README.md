@@ -72,17 +72,23 @@ Create an `mcp-eval.config.json` file:
       "description": "Test basic math operations",
       "steps": [
         {
-          "user": "What is 2 + 2?",
-          "expectTools": ["calculate"],
-          "expectedState": "4"
+          "user": "Calculate 2 + 2 and then multiply the result by 3",
+          "expectedState": "12"
         }
-      ]
+      ],
+      "expectTools": ["add", "multiply"]
     }
   ],
   "llmJudge": false,
   "timeout": 30000
 }
 ```
+
+**Key Features:**
+
+- **LLM-Driven Execution**: The LLM (Claude) autonomously plans and executes tool calls based on high-level user prompts
+- **Natural Language Tasks**: Write workflows as you would describe them to a human
+- **Flexible Tool Usage**: The LLM decides how to use available tools to accomplish the task
 
 ## Configuration Schema
 

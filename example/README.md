@@ -73,6 +73,27 @@ Tests a remote HTTP-based MCP server (no local installation needed).
 npx mcpvals eval ./remote-server-eval.config.json
 ```
 
+### 5. Authenticated Server (`authenticated-server-eval.config.json`)
+
+Example of testing authenticated HTTP MCP servers with custom headers.
+
+**Features:**
+
+- Bearer token authentication
+- API key headers
+- Environment variable interpolation for secrets
+
+**To test:**
+
+```bash
+# Set your authentication credentials
+export API_TOKEN="your-bearer-token"
+export API_KEY="your-api-key"
+
+# Run evaluation
+npx mcpvals eval ./authenticated-server-eval.config.json
+```
+
 ## Testing Individual Metrics
 
 Each example is designed to test specific metrics:

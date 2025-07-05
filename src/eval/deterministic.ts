@@ -112,12 +112,17 @@ export class DeterministicEvaluator {
    */
   private evaluateToolInvocationOrder(workflow: Workflow): EvaluationResult {
     const actualToolCalls = this.traceStore.getToolCalls().map((tc) => tc.name);
-    const expectedTools: string[] = [];
+    let expectedTools: string[] = [];
 
-    // Collect all expected tools from workflow steps
-    for (const step of workflow.steps) {
-      if (step.expectTools) {
-        expectedTools.push(...step.expectTools);
+    // First check if workflow has top-level expectTools
+    if (workflow.expectTools && workflow.expectTools.length > 0) {
+      expectedTools = workflow.expectTools;
+    } else {
+      // Otherwise collect all expected tools from workflow steps
+      for (const step of workflow.steps) {
+        if (step.expectTools) {
+          expectedTools.push(...step.expectTools);
+        }
       }
     }
 

@@ -1,10 +1,10 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { execa, ExecaChildProcess } from "execa";
 import { ServerConfig } from "./config.js";
 import { TraceStore } from "./trace.js";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText, tool } from "ai";
 import { z } from "zod";
 
@@ -113,8 +113,22 @@ export class ServerRunner {
       throw new Error("Invalid server config for HTTP");
     }
 
-    // Create SSE transport
-    const transport = new SSEClientTransport(new URL(this.serverConfig.url));
+    // Create StreamableHTTP transport with proper options
+    const transport = new StreamableHTTPClientTransport(
+      new URL(this.serverConfig.url),
+      {
+        requestInit: {
+          headers: this.serverConfig.headers,
+        },
+        // Optional: Add reconnection options if needed
+        reconnectionOptions: {
+          maxReconnectionDelay: 30000,
+          initialReconnectionDelay: 1000,
+          reconnectionDelayGrowFactor: 1.5,
+          maxRetries: 2,
+        },
+      },
+    );
 
     // Initialize client
     this.client = new Client(
@@ -135,6 +149,12 @@ export class ServerRunner {
 
     if (this.options.debug) {
       console.log("Connected to HTTP MCP server");
+      if (this.serverConfig.headers) {
+        console.log(
+          "Using custom headers:",
+          Object.keys(this.serverConfig.headers),
+        );
+      }
     }
   }
 
@@ -331,6 +351,17 @@ Focus on completing the tasks accurately and efficiently.`;
       messages.push({ role: "user", content: step.user });
 
       try {
+        const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+        if (!anthropicApiKey) {
+          throw new Error(
+            "ANTHROPIC_API_KEY environment variable is required for workflow execution",
+          );
+        }
+
+        const anthropic = createAnthropic({
+          apiKey: anthropicApiKey,
+        });
+
         const result = await generateText({
           model: anthropic("claude-3-5-sonnet-20241022"),
           system: systemPrompt,
