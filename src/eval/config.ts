@@ -2,6 +2,46 @@ import { z } from "zod";
 import { readFile } from "fs/promises";
 import { resolve } from "path";
 
+// Tool test schema for individual tool health testing
+export const ToolTestSchema = z.object({
+  name: z.string().describe("Tool name to test"),
+  description: z
+    .string()
+    .optional()
+    .describe("Description of what this test does"),
+  args: z.record(z.unknown()).describe("Arguments to pass to the tool"),
+  expectedResult: z
+    .unknown()
+    .optional()
+    .describe("Expected result for validation"),
+  expectedError: z
+    .string()
+    .optional()
+    .describe("Expected error message if tool should fail"),
+  maxLatency: z
+    .number()
+    .optional()
+    .describe("Maximum acceptable latency in milliseconds"),
+  retries: z
+    .number()
+    .min(0)
+    .max(5)
+    .default(0)
+    .describe("Number of retries on failure"),
+});
+
+// Tool health suite schema
+export const ToolHealthSuiteSchema = z.object({
+  name: z.string().describe("Name of the tool health suite"),
+  description: z.string().optional().describe("Description of this test suite"),
+  tests: z.array(ToolTestSchema).describe("Individual tool tests"),
+  parallel: z.boolean().default(false).describe("Run tests in parallel"),
+  timeout: z
+    .number()
+    .optional()
+    .describe("Override global timeout for these tests"),
+});
+
 // Workflow step schema
 export const WorkflowStepSchema = z.object({
   user: z.string().describe("User message to send"),
@@ -45,7 +85,8 @@ export const ServerSchema = z.discriminatedUnion("transport", [
 // Main configuration schema
 export const ConfigSchema = z.object({
   server: ServerSchema,
-  workflows: z.array(WorkflowSchema),
+  workflows: z.array(WorkflowSchema).optional().default([]),
+  toolHealthSuites: z.array(ToolHealthSuiteSchema).optional().default([]),
   timeout: z.number().optional().default(30000),
   llmJudge: z.boolean().default(false),
   openaiKey: z.string().optional(),
@@ -57,6 +98,8 @@ export type Config = z.infer<typeof ConfigSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
 export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
 export type ServerConfig = z.infer<typeof ServerSchema>;
+export type ToolTest = z.infer<typeof ToolTestSchema>;
+export type ToolHealthSuite = z.infer<typeof ToolHealthSuiteSchema>;
 
 /**
  * Expand environment variables in a string

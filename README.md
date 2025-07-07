@@ -1,251 +1,309 @@
-# mcpvals
+# MCPVals – Comprehensive Usage & Reference Guide
 
-An evaluation library for Model Context Protocol (MCP) servers. Test and validate your MCP servers with deterministic metrics and optional LLM-based evaluation.
+An evaluation library for Model Context Protocol (MCP) servers. Test and validate your MCP servers with deterministic metrics, tool health suites, and optional LLM-based evaluation.
 
-## Features
+> **Status**: MVP – API **stable**, minor breaking changes possible before 1.0.0
 
-- 🎯 **Three Core Metrics**:
-  1. **End-to-End Success** - Did the workflow reach the desired end state?
-  2. **Tool Invocation Order** - Were tools called in the expected sequence?
-  3. **Tool Call Health** - Did all tool calls complete successfully?
+---
 
-- 🤖 **Multiple Server Types**: Support for stdio and HTTP-based MCP servers
-- 📊 **Multiple Reporters**: Console, JSON, and JUnit output formats
-- 🧠 **LLM Judge** (optional): AI-powered evaluation using Vercel AI SDK
-- 🔧 **CLI & Library**: Use as a command-line tool or integrate into your code
+## 0. Quick Start
 
-## Installation
+### 1. Installation
 
 ```bash
-npm install mcpvals
-# or
-yarn add mcpvals
-# or
-pnpm add mcpvals
-# or
-bun add mcpvals
+# Install – pick your favourite package manager
+pnpm add -D mcpvals            # dev-dependency is typical
 ```
 
-## Quick Start
+### 2. Create a config file
 
-### CLI Usage
-
-```bash
-# List workflows in a config file
-npx mcpvals list ./mcp-eval.config.json
-
-# Run evaluation
-npx mcpvals eval ./mcp-eval.config.json
-
-# With options
-npx mcpvals eval ./mcp-eval.config.json --debug --reporter json
-```
-
-### Library Usage
+Create a config file (e.g., `mcp-eval.config.ts`):
 
 ```typescript
-import { evaluate } from "mcpvals";
+import type { Config } from "mcpvals";
 
-const report = await evaluate("./mcp-eval.config.json", {
-  debug: true,
-  reporter: "console",
-  llmJudge: false,
-});
+export default {
+  server: {
+    transport: "stdio",
+    command: "node",
+    args: ["./example/simple-mcp-server.js"],
+  },
 
-console.log(`Evaluation ${report.passed ? "passed" : "failed"}`);
+  // Test individual tools directly
+  toolHealthSuites: [
+    {
+      name: "Calculator Health Tests",
+      tests: [
+        {
+          name: "add",
+          args: { a: 5, b: 3 },
+          expectedResult: 8,
+          maxLatency: 500,
+        },
+        {
+          name: "divide",
+          args: { a: 10, b: 0 },
+          expectedError: "division by zero",
+        },
+      ],
+    },
+  ],
+
+  // Test multi-step, LLM-driven workflows
+  workflows: [
+    {
+      name: "Multi-step Calculation",
+      steps: [
+        {
+          user: "Calculate (5 + 3) * 2, then divide by 4",
+          expectedState: "4",
+        },
+      ],
+      expectTools: ["add", "multiply", "divide"],
+    },
+  ],
+
+  // Optional LLM judge
+  llmJudge: true,
+  openaiKey: process.env.OPENAI_API_KEY,
+  passThreshold: 0.8,
+} satisfies Config;
 ```
 
-### Configuration File
+### 3. Run Evaluation
 
-Create an `mcp-eval.config.json` file:
+```bash
+# Required for workflow execution
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Optional for LLM judge
+export OPENAI_API_KEY="sk-..."
+
+# Run everything
+npx mcpvals eval mcp-eval.config.ts
+
+# Run only tool health tests
+npx mcpvals eval mcp-eval.config.ts --tool-health-only
+
+# Run with LLM judge and save report
+npx mcpvals eval mcp-eval.config.ts --llm-judge --reporter json > report.json
+```
+
+---
+
+## 1. Core Concepts
+
+MCPVals is designed to test MCP servers in two primary ways:
+
+1.  **Tool Health Testing**: Directly calls individual tools with specific arguments to verify their correctness, performance, and error handling. This is ideal for unit testing and regression checking.
+2.  **Workflow Evaluation**: Uses a large language model (LLM) to interpret natural language prompts and execute a series of tool calls to achieve a goal. This tests the integration of your tools and their usability from an LLM's perspective.
+
+---
+
+## 2. Installation & Runtime Requirements
+
+1.  **Node.js ≥ 18** – we rely on native `fetch`, `EventSource`, and `fs/promises`.
+2.  **pnpm / npm / yarn** – whichever you prefer, MCPVals is published as an ESM‐only package.
+3.  **MCP Server** – a local `stdio` binary **or** a remote Streaming-HTTP endpoint.
+4.  **Anthropic API Key** – Required for workflow execution (uses Claude to drive tool calls). Set via `ANTHROPIC_API_KEY` environment variable.
+5.  **(Optional) OpenAI key** – Only required if using the LLM judge feature. Set via `OPENAI_API_KEY`.
+
+> **ESM-only**: You **cannot** `require("mcpvals")` from a CommonJS project. Either enable `"type": "module"` in your `package.json` or use dynamic `import()`.
+
+---
+
+## 3. CLI Reference
+
+```
+Usage: mcpvals <command>
+
+Commands:
+  eval <config>   Evaluate MCP servers using workflows and/or tool health tests
+  list <config>   List workflows in a config file
+  help [command]  Show help                                [default]
+
+Evaluation options:
+  -d, --debug              Verbose logging (child-process stdout/stderr is piped)
+  -r, --reporter <fmt>     console | json | junit (JUnit coming soon)
+  --llm-judge              Enable LLM judge (requires llmJudge:true + key)
+  --tool-health-only       Run only tool health tests, skip workflows
+  --workflows-only         Run only workflows, skip tool health tests
+```
+
+### 3.1 `eval`
+
+Runs tests specified in the config file. It will run both `toolHealthSuites` and `workflows` by default. Use flags to run only one type. Exits **0** on success or **1** on any failure – perfect for CI.
+
+### 3.2 `list`
+
+Static inspection – prints workflows without starting the server. Handy when iterating on test coverage.
+
+---
+
+## 4. Configuration
+
+MCPVals loads **either** a `.json` file **or** a `.ts/.js` module that `export default` an object. Any string value in the config supports **Bash-style environment variable interpolation** `${VAR}`.
+
+### 4.1 `server`
+
+Defines how to connect to your MCP server.
+
+- `transport`: `stdio` or `shttp` (Streaming HTTP).
+- `command`/`args`: (for `stdio`) The command to execute your server.
+- `env`: (for `stdio`) Environment variables to set for the child process.
+- `url`/`headers`: (for `shttp`) The endpoint and headers for a remote server.
+
+**Example `shttp` with Authentication:**
 
 ```json
 {
   "server": {
-    "transport": "stdio",
-    "command": "node",
-    "args": ["./my-mcp-server.js"]
-  },
-  "workflows": [
-    {
-      "name": "basic-math",
-      "description": "Test basic math operations",
-      "steps": [
-        {
-          "user": "Calculate 2 + 2 and then multiply the result by 3",
-          "expectedState": "12"
-        }
-      ],
-      "expectTools": ["add", "multiply"]
+    "transport": "shttp",
+    "url": "https://api.example.com/mcp",
+    "headers": {
+      "Authorization": "Bearer ${API_TOKEN}",
+      "X-API-Key": "${API_KEY}"
     }
-  ],
-  "llmJudge": false,
-  "timeout": 30000
-}
-```
-
-**Key Features:**
-
-- **LLM-Driven Execution**: The LLM (Claude) autonomously plans and executes tool calls based on high-level user prompts
-- **Natural Language Tasks**: Write workflows as you would describe them to a human
-- **Flexible Tool Usage**: The LLM decides how to use available tools to accomplish the task
-
-## Configuration Schema
-
-### Server Configuration
-
-**stdio servers:**
-
-```json
-{
-  "transport": "stdio",
-  "command": "python",
-  "args": ["server.py"],
-  "env": {
-    "API_KEY": "your-key"
   }
 }
 ```
 
-**HTTP servers:**
+### 4.2 `toolHealthSuites[]`
 
-```json
-{
-  "transport": "shttp",
-  "url": "http://localhost:8080/mcp",
-  "headers": {
-    "Authorization": "Bearer token"
-  }
-}
-```
+An array of suites for testing tools directly. Each suite contains:
 
-### Workflow Configuration
+- `name`: Identifier for the test suite.
+- `tests`: An array of individual tool tests.
+- `parallel`: (boolean) Whether to run tests in the suite in parallel (default: `false`).
+- `timeout`: (number) Override the global timeout for this suite.
 
-```json
-{
-  "name": "workflow-name",
-  "description": "Optional description",
-  "steps": [
-    {
-      "user": "User message to send",
-      "expectTools": ["tool1", "tool2"], // Optional: Expected tools in order
-      "expectedState": "Expected result" // Optional: For end-to-end validation
-    }
-  ]
-}
-```
+#### Tool Test Schema
 
-## Evaluation Metrics
+| Field            | Type      | Description                                                            |
+| ---------------- | --------- | ---------------------------------------------------------------------- |
+| `name`           | `string`  | Tool name to test (must match an available MCP tool).                  |
+| `description`    | `string`? | What this test validates.                                              |
+| `args`           | `object`  | Arguments to pass to the tool.                                         |
+| `expectedResult` | `any`?    | Expected result. Uses deep equality for objects, contains for strings. |
+| `expectedError`  | `string`? | Expected error message if the tool should fail.                        |
+| `maxLatency`     | `number`? | Maximum acceptable latency in milliseconds.                            |
+| `retries`        | `number`? | Retries on failure (0-5, default: 0).                                  |
 
-### 1. End-to-End Success ✅
+### 4.3 `workflows[]`
 
-Validates that the workflow reached the expected final state. The evaluator checks:
+An array of LLM-driven test workflows. Each workflow contains:
 
-- Last assistant message content
-- Final tool result output
-- String matching against `expectedState`
+- `name`: Identifier for the workflow.
+- `steps`: An array of user interactions (usually just one for a high-level goal).
+- `expectTools`: An array of tool names expected to be called during the workflow.
 
-### 2. Tool Invocation Order 🔧
+#### Workflow Step Schema
 
-Ensures tools are called in the expected sequence:
+| Field           | Type      | Description                                                                         |
+| --------------- | --------- | ----------------------------------------------------------------------------------- |
+| `user`          | `string`  | High-level user intent. The LLM will plan how to accomplish this.                   |
+| `expectedState` | `string`? | A sub-string the evaluator looks for in the final assistant message or tool result. |
 
-- Exact order matching
-- Partial credit for partially correct sequences
-- Handles workflows with no tool expectations
+#### Workflow Best Practices
 
-### 3. Tool Call Health 💚
+1.  **Write natural prompts**: Instead of micro-managing tool calls, give the LLM a complete task (e.g., "Book a flight from SF to NY for next Tuesday and then find a hotel near the airport.").
+2.  **Use workflow-level `expectTools`**: List all tools you expect to be used across the entire workflow to verify the LLM's plan.
 
-Verifies all tool calls completed successfully:
+### 4.4 Global Options
 
-- No exceptions thrown
-- HTTP status codes 200-299
-- Valid response payloads
+- `timeout`: (number) Global timeout in ms for server startup and individual tool calls. Default: `30000`.
+- `llmJudge`: (boolean) Enables the LLM Judge feature. Default: `false`.
+- `openaiKey`: (string) OpenAI API key for the LLM Judge.
+- `judgeModel`: (string) The model to use for judging. Default: `"gpt-4o"`.
+- `passThreshold`: (number) The minimum score (0-1) from the LLM Judge to pass. Default: `0.8`.
 
-## Output Formats
+---
 
-### Console Reporter (Default)
+## 5. Evaluation & Metrics
 
-```
-MCP Server Evaluation Results
-============================================================
+### 5.1 Tool Health Metrics
 
-Workflow: basic-math ✓ PASSED
-Overall Score: 100%
-----------------------------------------
-  ✓ End-to-End Success: 100%
-    Successfully reached expected state: "4"
-  ✓ Tool Invocation Order: 100%
-    All 1 tools called in correct order
-  ✓ Tool Call Health: 100%
-    All 1 tool calls completed successfully
+When running tool health tests, the following is assessed for each test:
 
-============================================================
-Summary:
-  Total Workflows: 1
-  Passed: 1
-  Failed: 0
-  Overall Score: 100%
+- **Result Correctness**: Does the output match `expectedResult`?
+- **Error Correctness**: If `expectedError` is set, did the tool fail with a matching error?
+- **Latency**: Did the tool respond within `maxLatency`?
+- **Success**: Did the tool call complete without unexpected errors?
 
-✅ All Evaluations Passed!
-```
+### 5.2 Workflow Metrics (Deterministic)
 
-### JSON Reporter
+For each workflow, a trace of the LLM interaction is recorded and evaluated against 3 metrics:
 
-Outputs complete evaluation data as JSON for programmatic processing.
+| #   | Metric                | Pass Criteria                                                               |
+| --- | --------------------- | --------------------------------------------------------------------------- |
+| 1   | End-to-End Success    | `expectedState` is found in the final response.                             |
+| 2   | Tool Invocation Order | The tools listed in `expectTools` were called in the exact order specified. |
+| 3   | Tool Call Health      | All tool calls completed successfully (no errors, HTTP 2xx, etc.).          |
 
-### JUnit Reporter (Coming Soon)
+The overall score is an arithmetic mean. The **evaluation fails** if _any_ metric fails.
 
-Generates JUnit XML for CI/CD integration.
+### 5.3 LLM Judge (Optional)
 
-## Advanced Usage
+Add subjective grading when deterministic checks are not enough (e.g., checking tone, or conversational quality).
 
-### TypeScript Configuration
+- Set `"llmJudge": true` in the config and provide an OpenAI key.
+- Use the `--llm-judge` CLI flag.
 
-```typescript
-import { Config } from "mcpvals";
+The judge asks the specified `judgeModel` for a score and a reason. A 4th metric, _LLM Judge_, is added to the workflow results, which passes if `score >= passThreshold`.
 
-const config: Config = {
-  server: {
-    transport: "stdio",
-    command: "python",
-    args: ["server.py"],
-    env: { API_KEY: process.env.API_KEY }
-  },
-  workflows: [...],
+---
+
+## 6. Library API
+
+You can run evaluations programmatically.
+
+```ts
+import { evaluate } from "mcpvals";
+
+const report = await evaluate("./mcp-eval.config.ts", {
+  debug: process.env.CI === undefined,
+  reporter: "json",
   llmJudge: true,
-  openaiKey: process.env.OPENAI_API_KEY,
-  timeout: 60000
-};
-```
+});
 
-### LLM Judge (Optional)
-
-Enable AI-powered evaluation for subjective criteria:
-
-```bash
-npx mcpvals eval config.json --llm
-```
-
-Configuration options:
-
-```json
-{
-  "llmJudge": true,
-  "openaiKey": "your-openai-api-key",
-  "judgeModel": "gpt-4o",
-  "passThreshold": 0.7
+if (!report.passed) {
+  process.exit(1);
 }
 ```
 
-The LLM judge evaluates:
+### 7.1 Re-exported Types
 
-- Response quality and relevance
-- Appropriateness of tool usage
-- Conversation flow and completeness
-- Achievement of the intended goal
+The library exports all configuration and result types for use in TypeScript projects:
 
-Requires `openaiKey` in config or `OPENAI_API_KEY` environment variable.
+- `Config`, `Workflow`, `WorkflowStep`, `ToolTest`, `ToolHealthSuite`
+- `EvaluationReport`, `WorkflowEvaluation`, `EvaluationResult`
+- `ToolHealthResult`, `ToolTestResult`
+- `runLlmJudge`, `LlmJudgeResult`
 
-## License
+---
 
-Apache-2.0
+## 8. Extensibility & Troubleshooting
+
+- **Custom Reporters**: Import `ConsoleReporter` for reference and implement your own `.report()` method.
+- **Server Hangs**: Increase the `timeout` value in your config. Ensure your server writes MCP messages to `stdout`.
+- **LLM Judge Fails**: Use `--debug` to inspect the raw model output for malformed JSON.
+
+---
+
+## 9. Roadmap
+
+- [ ] JUnit reporter
+- [ ] Output-schema validation for tool calls
+- [ ] Parallel workflow execution
+- [ ] Web dashboard for replaying traces
+- [ ] Configurable `expectTools` strictness (e.g., allow extra or unordered calls)
+
+---
+
+## 10. Acknowledgements
+
+- [Model Context Protocol](https://modelcontextprotoco.lol) – for the SDK
+- [Vercel AI SDK](https://sdk.vercel.ai) – for LLM integration
+- [chalk](https://github.com/chalk/chalk) – for terminal colors
+
+Enjoy testing your MCP servers – PRs, issues & feedback welcome! ✨

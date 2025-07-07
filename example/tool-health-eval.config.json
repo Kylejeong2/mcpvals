@@ -1,0 +1,102 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["simple-mcp-server.js"]
+  },
+  "toolHealthSuites": [
+    {
+      "name": "Basic Math Operations",
+      "description": "Test basic calculator functionality",
+      "tests": [
+        {
+          "name": "add",
+          "description": "Addition test",
+          "args": { "a": 5, "b": 3 },
+          "expectedResult": 8,
+          "maxLatency": 1000
+        },
+        {
+          "name": "subtract",
+          "description": "Subtraction test",
+          "args": { "a": 10, "b": 4 },
+          "expectedResult": 6,
+          "maxLatency": 1000
+        },
+        {
+          "name": "multiply",
+          "description": "Multiplication test",
+          "args": { "a": 7, "b": 6 },
+          "expectedResult": 42,
+          "maxLatency": 1000
+        },
+        {
+          "name": "divide",
+          "description": "Division test",
+          "args": { "a": 15, "b": 3 },
+          "expectedResult": 5,
+          "maxLatency": 1000
+        }
+      ],
+      "parallel": false
+    },
+    {
+      "name": "Error Handling",
+      "description": "Test error conditions",
+      "tests": [
+        {
+          "name": "divide",
+          "description": "Division by zero test",
+          "args": { "a": 10, "b": 0 },
+          "expectedError": "division by zero",
+          "maxLatency": 1000
+        },
+        {
+          "name": "nonexistent_tool",
+          "description": "Test calling non-existent tool",
+          "args": {},
+          "expectedError": "Unknown tool",
+          "maxLatency": 1000,
+          "retries": 2
+        }
+      ],
+      "parallel": true
+    },
+    {
+      "name": "Performance Tests",
+      "description": "Test latency and performance",
+      "tests": [
+        {
+          "name": "add",
+          "description": "Fast addition test",
+          "args": { "a": 1, "b": 1 },
+          "expectedResult": 2,
+          "maxLatency": 100
+        },
+        {
+          "name": "multiply",
+          "description": "Fast multiplication test",
+          "args": { "a": 2, "b": 3 },
+          "expectedResult": 6,
+          "maxLatency": 100
+        }
+      ],
+      "parallel": true,
+      "timeout": 5000
+    }
+  ],
+  "workflows": [
+    {
+      "name": "Simple calculation workflow",
+      "description": "Test workflow integration with tool health",
+      "steps": [
+        {
+          "user": "Calculate 8 + 7 and then multiply the result by 2",
+          "expectTools": ["add", "multiply"],
+          "expectedState": "30"
+        }
+      ]
+    }
+  ],
+  "timeout": 10000
+}

@@ -3,37 +3,41 @@ import { evaluate } from "../eval/index.js";
 import chalk from "chalk";
 import { resolve } from "path";
 
-export const evalCommand = new Command("eval")
-  .description("Evaluate MCP servers against test workflows")
-  .argument("<config>", "Path to evaluation config file")
-  .option("-d, --debug", "Enable debug output", false)
-  .option(
-    "-r, --reporter <type>",
-    "Output format (console, json, junit)",
-    "console",
-  )
-  .option("--llm", "Enable LLM judge evaluation", false)
-  .action(async (configPath: string, options) => {
-    try {
-      const absolutePath = resolve(process.cwd(), configPath);
+export function createEvalCommand(): Command {
+  const evalCmd = new Command("eval");
 
-      console.log(chalk.blue("🔍 Starting MCP server evaluation..."));
-      console.log(chalk.gray(`Config: ${absolutePath}`));
-      console.log(chalk.gray(`Reporter: ${options.reporter}`));
+  evalCmd
+    .description(
+      "Evaluate an MCP server using workflows and/or tool health tests",
+    )
+    .argument("<config>", "Path to evaluation configuration file")
+    .option("-d, --debug", "Enable debug output")
+    .option("-r, --reporter <type>", "Output format", "console")
+    .option("--llm-judge", "Enable LLM judge evaluation")
+    .option("--tool-health-only", "Run only tool health tests, skip workflows")
+    .option("--workflows-only", "Run only workflows, skip tool health tests")
+    .action(async (configPath: string, options) => {
+      try {
+        const result = await evaluate(configPath, {
+          debug: options.debug,
+          reporter: options.reporter,
+          llmJudge: options.llmJudge,
+          toolHealthOnly: options.toolHealthOnly,
+          workflowsOnly: options.workflowsOnly,
+        });
 
-      const report = await evaluate(absolutePath, {
-        debug: options.debug,
-        reporter: options.reporter,
-        llmJudge: options.llm,
-      });
+        // Exit with error code if evaluation failed
+        if (!result.passed) {
+          process.exit(1);
+        }
+      } catch (error) {
+        console.error("Evaluation failed:", error);
+        process.exit(1);
+      }
+    });
 
-      // Exit with appropriate code
-      process.exit(report.passed ? 0 : 1);
-    } catch (error) {
-      console.error(chalk.red("❌ Evaluation failed:"), error);
-      process.exit(1);
-    }
-  });
+  return evalCmd;
+}
 
 // List command to show available workflows
 export const listCommand = new Command("list")
