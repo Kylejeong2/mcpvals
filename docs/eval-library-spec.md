@@ -60,7 +60,7 @@ flowchart TD
 ### 3.1 Library Entry Point
 
 ```ts
-import { evaluate } from "@mcpvals";
+import { evaluate } from "mcpvals";
 
 const result = await evaluate("./mcp-eval.config.ts");
 ```

@@ -10,7 +10,7 @@
 
 ```bash
 # Install – pick your favourite package manager
-pnpm add -D @mcpvals            # dev-dependency is typical
+pnpm add -D mcpvals            # dev-dependency is typical
 
 # Generate an example config (helper coming soon)
 cp example/simple-server-eval.config.json mcp-eval.config.json
@@ -35,7 +35,7 @@ npx mcpvals eval mcp-eval.config.json --llm --reporter json > report.json
 4. **Anthropic API Key** – Required for workflow execution (uses Claude to drive tool calls). Set via `ANTHROPIC_API_KEY` environment variable.
 5. **(Optional) OpenAI key** – Only required if using the LLM judge feature.
 
-> Caveat: ESM-only means you **cannot** `require("@mcpvals")` from a CommonJS project. Either enable `"type": "module"` or use dynamic `import()`.
+> Caveat: ESM-only means you **cannot** `require("mcpvals")` from a CommonJS project. Either enable `"type": "module"` or use dynamic `import()`.
 
 ### Setting up API Keys
 
@@ -106,7 +106,7 @@ export default {
   openaiKey: process.env.OPENAI_API_KEY,
   judgeModel: "gpt-4o", // any model string your provider accepts
   passThreshold: 0.8,
-} satisfies import("@mcpvals").Config;
+} satisfies import("mcpvals").Config;
 ```
 
 ### 3.1 `server`
@@ -253,7 +253,7 @@ CLI flag `--llm` must also be supplied. The judge:
 ## 7. Library API
 
 ```ts
-import { evaluate } from "@mcpvals";
+import { evaluate } from "mcpvals";
 
 const { passed, evaluations } = await evaluate("./mcp-eval.config.json", {
   debug: process.env.CI === undefined,

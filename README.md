@@ -1,4 +1,4 @@
-# @mcpvals
+# mcpvals
 
 An evaluation library for Model Context Protocol (MCP) servers. Test and validate your MCP servers with deterministic metrics and optional LLM-based evaluation.
 
@@ -17,13 +17,13 @@ An evaluation library for Model Context Protocol (MCP) servers. Test and validat
 ## Installation
 
 ```bash
-npm install @mcpvals
+npm install mcpvals
 # or
-yarn add @mcpvals
+yarn add mcpvals
 # or
-pnpm add @mcpvals
+pnpm add mcpvals
 # or
-bun add @mcpvals
+bun add mcpvals
 ```
 
 ## Quick Start
@@ -44,7 +44,7 @@ npx mcpvals eval ./mcp-eval.config.json --debug --reporter json
 ### Library Usage
 
 ```typescript
-import { evaluate } from "@mcpvals";
+import { evaluate } from "mcpvals";
 
 const report = await evaluate("./mcp-eval.config.json", {
   debug: true,
@@ -202,7 +202,7 @@ Generates JUnit XML for CI/CD integration.
 ### TypeScript Configuration
 
 ```typescript
-import { Config } from "@mcpvals";
+import { Config } from "mcpvals";
 
 const config: Config = {
   server: {

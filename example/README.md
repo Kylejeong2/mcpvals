@@ -193,12 +193,12 @@ Example deployment guide coming soon!
 If you prefer programmatic control, use the ESM-friendly API:
 
 ```bash
-pnpm add -D tsx typescript @mcpvals
+pnpm add -D tsx typescript mcpvals
 ```
 
 ```ts
 // run-evaluation.ts
-import { evaluate } from "@mcpvals";
+import { evaluate } from "mcpvals";
 
 await evaluate("./example/simple-server-eval.config.ts", {
   debug: true,

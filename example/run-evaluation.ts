@@ -2,7 +2,7 @@
 // Uncomment and run with: tsx run-evaluation.ts
 
 /*
-import { evaluate } from "@mcpvals";
+import { evaluate } from "mcpvals";
 
 (async () => {
   const report = await evaluate("./example/simple-server-eval.config.ts", {

@@ -1,4 +1,4 @@
-// import type { Config } from "@mcpvals";
+// import type { Config } from "mcpvals";
 
 const config = {
   server: {

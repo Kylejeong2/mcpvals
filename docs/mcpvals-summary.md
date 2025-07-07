@@ -100,7 +100,7 @@ npx mcpvals eval ./config.json --debug --reporter json --llm
 ### Library
 
 ```typescript
-import { evaluate } from "@mcpvals";
+import { evaluate } from "mcpvals";
 
 // Requires ANTHROPIC_API_KEY environment variable
 const report = await evaluate("./config.json", {

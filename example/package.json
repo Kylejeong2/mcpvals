@@ -15,7 +15,7 @@
     "@modelcontextprotocol/sdk": "^1.12.0"
   },
   "devDependencies": {
-    "@mcpvals": "^0.0.1",
+    "mcpvals": "^0.0.1",
     "tsx": "^4.7.0"
   },
   "engines": {

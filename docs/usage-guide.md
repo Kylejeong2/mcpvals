@@ -17,11 +17,11 @@ This guide shows you how to use MCPVals to evaluate your MCP servers. MCPVals us
 ## Installation
 
 ```bash
-npm install @mcpvals
+npm install mcpvals
 # or
-pnpm add @mcpvals
+pnpm add mcpvals
 # or
-yarn add @mcpvals
+yarn add mcpvals
 ```
 
 ### Prerequisites
@@ -57,7 +57,7 @@ npx mcpvals eval ./mcp-eval.config.json --reporter json
 ### Library Usage
 
 ```typescript
-import { evaluate } from "@mcpvals";
+import { evaluate } from "mcpvals";
 
 async function runEvaluation() {
   const report = await evaluate("./mcp-eval.config.json", {
@@ -262,8 +262,8 @@ This single workflow tests:
 ### TypeScript Configuration
 
 ```typescript
-import { Config } from "@mcpvals";
-import { evaluate } from "@mcpvals";
+import { Config } from "mcpvals";
+import { evaluate } from "mcpvals";
 
 const config: Config = {
   server: {
