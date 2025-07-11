@@ -4,7 +4,7 @@
   "description": "Evaluation library for Model Context Protocol servers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "bin": {
     "mcpvals": "./dist/cli/index.js"
   },
@@ -13,11 +13,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
-    },
-    "./next": {
-      "types": "./dist/next/index.d.ts",
-      "import": "./dist/next/index.mjs",
-      "require": "./dist/next/index.js"
     }
   },
   "files": [
@@ -35,6 +30,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
+    "typecheck": "tsc --noEmit",
     "version-packages": "changeset version",
     "changeset": "changeset",
     "release": "pnpm build && changeset publish",
