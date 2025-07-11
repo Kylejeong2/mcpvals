@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        id: pnpm-setup
+        with:
+          version: 9.4.0
+          run_install: false
+
+      - name: Install Dependencies
+        id: pnpm-install
+        run: pnpm install
+
+      - name: Type Check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build Package
+        run: pnpm build
+
+      - name: Run Tests
+        run: pnpm test
