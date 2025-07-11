@@ -117,25 +117,6 @@ export async function evaluate(
           });
         }
 
-        // Record tool calls
-        for (const toolCall of toolCalls) {
-          const toolCallId = `tool_${Date.now()}_${Math.random()}`;
-          traceStore.addToolCall({
-            id: toolCallId,
-            name: toolCall.name,
-            arguments: toolCall.args,
-            timestamp: new Date(),
-          });
-
-          traceStore.addToolResult({
-            id: `result_${Date.now()}`,
-            toolCallId,
-            result: toolCall.result,
-            error: toolCall.error,
-            timestamp: new Date(),
-          });
-        }
-
         if (options.debug) {
           console.log(`Workflow execution ${success ? "succeeded" : "failed"}`);
           console.log(`Tool calls made: ${toolCalls.length}`);

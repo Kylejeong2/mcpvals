@@ -196,7 +196,7 @@ export class ServerRunner {
    */
   async callTool(name: string, args: Record<string, unknown>) {
     const client = this.getClient();
-    const toolCallId = `tool_${Date.now()}`;
+    const toolCallId = `tool_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
     // Record the tool call
     this.traceStore.addToolCall({
@@ -214,7 +214,7 @@ export class ServerRunner {
 
       // Record the result
       this.traceStore.addToolResult({
-        id: `result_${Date.now()}`,
+        id: `result_${Date.now()}_${Math.random().toString(36).substring(2)}`,
         toolCallId,
         result: response,
         timestamp: new Date(),
@@ -224,7 +224,7 @@ export class ServerRunner {
     } catch (error) {
       // Record the error
       this.traceStore.addToolResult({
-        id: `result_${Date.now()}`,
+        id: `result_${Date.now()}_${Math.random().toString(36).substring(2)}`,
         toolCallId,
         result: null,
         error: error instanceof Error ? error.message : String(error),

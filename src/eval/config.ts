@@ -87,7 +87,7 @@ export const ConfigSchema = z.object({
   server: ServerSchema,
   workflows: z.array(WorkflowSchema).optional().default([]),
   toolHealthSuites: z.array(ToolHealthSuiteSchema).optional().default([]),
-  timeout: z.number().optional().default(30000),
+  timeout: z.number().min(1).optional().default(30000),
   llmJudge: z.boolean().default(false),
   openaiKey: z.string().optional(),
   judgeModel: z.string().default("gpt-4o"),
