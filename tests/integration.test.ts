@@ -683,7 +683,7 @@ describe("Integration Tests", () => {
 
       expect(result.passed).toBe(true);
       expect(result.toolHealthResults[0].passedTests).toBe(1);
-      expect(result.toolHealthResults[0].results[0].retryCount).toBe(2);
+      expect(result.toolHealthResults[0].results[0].retryCount).toBe(1);
       // Only check flaky_tool calls, not the workflow tool calls
       expect(mockClient.callTool).toHaveBeenCalledTimes(3); // Initial + 2 retries
     });

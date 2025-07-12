@@ -942,9 +942,25 @@ export class ResourceEvaluator {
     template: string,
     parameters: Record<string, unknown>,
   ): string {
+    // Find all template parameters in the format {param}
+    const templateParams = template.match(/\{([^}]+)\}/g) || [];
+    const requiredParams = templateParams.map((p) => p.slice(1, -1)); // Remove { and }
+
+    // Check for missing required parameters
+    const missingParams = requiredParams.filter(
+      (param) => !(param in parameters),
+    );
+    if (missingParams.length > 0) {
+      throw new Error(
+        `Missing required parameters: ${missingParams.join(", ")}`,
+      );
+    }
+
     let result = template;
     for (const [key, value] of Object.entries(parameters)) {
-      const placeholder = `{${key}}`;
+      // Escape special regex characters in the key to prevent regex injection
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const placeholder = `\\{${escapedKey}\\}`;
       result = result.replace(new RegExp(placeholder, "g"), String(value));
     }
     return result;

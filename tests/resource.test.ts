@@ -889,6 +889,129 @@ describe("ResourceEvaluator", () => {
       expect(suite.templateTests![0].templateUri).toBe("file://data/{id}.json");
       expect(suite.templateTests![0].parameters).toEqual({ id: "123" });
     });
+
+    it("should handle parameters with special regex characters", async () => {
+      const test: ResourceTemplateTest = {
+        name: "regex-chars-test",
+        templateUri: "file://data/{key$^()}.json",
+        parameters: { "key$^()": "value" },
+        retries: 0,
+      };
+
+      mockRunner.listResourceTemplates.mockResolvedValueOnce({
+        resourceTemplates: [
+          {
+            uriTemplate: "file://data/{key$^()}.json",
+            name: "special-template",
+          },
+        ],
+      });
+
+      mockRunner.readResource.mockResolvedValueOnce({
+        contents: [
+          {
+            uri: "file://data/value.json",
+            text: '{"data": "test"}',
+          },
+        ],
+      });
+
+      const result = await resourceEvaluator.runResourceTemplateTest(test);
+
+      expect(result.passed).toBe(true);
+      expect(result.metadata?.instantiatedUri).toBe("file://data/value.json");
+    });
+
+    it("should fail when required parameters are missing", async () => {
+      const test: ResourceTemplateTest = {
+        name: "missing-params-test",
+        templateUri: "file://data/{id}/{type}.json",
+        parameters: { id: "123" }, // missing 'type' parameter
+        retries: 0,
+      };
+
+      mockRunner.listResourceTemplates.mockResolvedValueOnce({
+        resourceTemplates: [
+          {
+            uriTemplate: "file://data/{id}/{type}.json",
+            name: "multi-param-template",
+          },
+        ],
+      });
+
+      const result = await resourceEvaluator.runResourceTemplateTest(test);
+
+      expect(result.passed).toBe(false);
+      expect(result.details).toContain("Missing required parameters: type");
+    });
+
+    it("should handle multiple parameter replacements", async () => {
+      const test: ResourceTemplateTest = {
+        name: "multi-params-test",
+        templateUri: "file://data/{category}/{id}/{format}",
+        parameters: { category: "users", id: "123", format: "json" },
+        retries: 0,
+      };
+
+      mockRunner.listResourceTemplates.mockResolvedValueOnce({
+        resourceTemplates: [
+          {
+            uriTemplate: "file://data/{category}/{id}/{format}",
+            name: "multi-param-template",
+          },
+        ],
+      });
+
+      mockRunner.readResource.mockResolvedValueOnce({
+        contents: [
+          {
+            uri: "file://data/users/123/json",
+            text: '{"user": "data"}',
+          },
+        ],
+      });
+
+      const result = await resourceEvaluator.runResourceTemplateTest(test);
+
+      expect(result.passed).toBe(true);
+      expect(result.metadata?.instantiatedUri).toBe(
+        "file://data/users/123/json",
+      );
+    });
+
+    it("should handle repeated parameter names in template", async () => {
+      const test: ResourceTemplateTest = {
+        name: "repeated-params-test",
+        templateUri: "file://data/{id}/backup/{id}.bak",
+        parameters: { id: "123" },
+        retries: 0,
+      };
+
+      mockRunner.listResourceTemplates.mockResolvedValueOnce({
+        resourceTemplates: [
+          {
+            uriTemplate: "file://data/{id}/backup/{id}.bak",
+            name: "backup-template",
+          },
+        ],
+      });
+
+      mockRunner.readResource.mockResolvedValueOnce({
+        contents: [
+          {
+            uri: "file://data/123/backup/123.bak",
+            text: "backup data",
+          },
+        ],
+      });
+
+      const result = await resourceEvaluator.runResourceTemplateTest(test);
+
+      expect(result.passed).toBe(true);
+      expect(result.metadata?.instantiatedUri).toBe(
+        "file://data/123/backup/123.bak",
+      );
+    });
   });
 
   describe("content validation", () => {
