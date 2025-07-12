@@ -10,6 +10,7 @@ import { ToolTester, ToolHealthResult } from "./tool-health.js";
 import { ResourceEvaluator, ResourceSuiteResult } from "./resource.js";
 import { PromptEvaluator, PromptSuiteResult } from "./prompt.js";
 import { SamplingEvaluator, SamplingSuiteResult } from "./sampling.js";
+import { OAuth2TestRunner, OAuth2SuiteResult } from "../auth/oauth-runner.js";
 import { ConsoleReporter } from "./reporters/console.js";
 import { runLlmJudge } from "./llm-judge.js";
 
@@ -22,6 +23,7 @@ export interface EvaluateOptions {
   resourcesOnly?: boolean;
   promptsOnly?: boolean;
   samplingOnly?: boolean;
+  oauth2Only?: boolean;
 }
 
 export interface EvaluationReport {
@@ -31,6 +33,7 @@ export interface EvaluationReport {
   resourceResults: ResourceSuiteResult[];
   promptResults: PromptSuiteResult[];
   samplingResults: SamplingSuiteResult[];
+  oauth2Results: OAuth2SuiteResult[];
   passed: boolean;
   timestamp: Date;
 }
@@ -51,10 +54,11 @@ export async function evaluate(
     (config.toolHealthSuites?.length ?? 0) === 0 &&
     (config.resourceSuites?.length ?? 0) === 0 &&
     (config.promptSuites?.length ?? 0) === 0 &&
-    (config.samplingSuites?.length ?? 0) === 0
+    (config.samplingSuites?.length ?? 0) === 0 &&
+    (config.oauth2Suites?.length ?? 0) === 0
   ) {
     throw new Error(
-      "Configuration must include workflows, toolHealthSuites, resourceSuites, promptSuites, or samplingSuites",
+      "Configuration must include workflows, toolHealthSuites, resourceSuites, promptSuites, samplingSuites, or oauth2Suites",
     );
   }
 
@@ -73,6 +77,7 @@ export async function evaluate(
   const resourceResults: ResourceSuiteResult[] = [];
   const promptResults: PromptSuiteResult[] = [];
   const samplingResults: SamplingSuiteResult[] = [];
+  const oauth2Results: OAuth2SuiteResult[] = [];
 
   try {
     // Start the server
@@ -311,12 +316,41 @@ export async function evaluate(
       }
     }
 
+    // Run OAuth 2.1 evaluation tests if requested
+    if (
+      !options.workflowsOnly &&
+      !options.toolHealthOnly &&
+      !options.resourcesOnly &&
+      !options.promptsOnly &&
+      !options.samplingOnly &&
+      (config.oauth2Suites?.length ?? 0) > 0
+    ) {
+      console.log("\n" + "=".repeat(60));
+      console.log("Running OAuth 2.1 Authentication Tests...");
+
+      const oauth2Runner = new OAuth2TestRunner(options.debug);
+
+      for (const suite of config.oauth2Suites ?? []) {
+        if (options.debug) {
+          console.log(`Starting OAuth 2.1 suite: ${suite.name}`);
+          if (suite.description) {
+            console.log(`Description: ${suite.description}`);
+          }
+        }
+
+        // Run the OAuth 2.1 suite
+        const result = await oauth2Runner.runTestSuite(suite);
+        oauth2Results.push(result);
+      }
+    }
+
     // Run workflow evaluations if requested
     if (
       !options.toolHealthOnly &&
       !options.resourcesOnly &&
       !options.promptsOnly &&
       !options.samplingOnly &&
+      !options.oauth2Only &&
       config.workflows.length > 0
     ) {
       console.log("\n" + "=".repeat(60));
@@ -411,12 +445,16 @@ export async function evaluate(
     promptResults.length === 0 || promptResults.every((r) => r.passed);
   const samplingPassed =
     samplingResults.length === 0 || samplingResults.every((r) => r.passed);
+  const oauth2Passed =
+    oauth2Results.length === 0 ||
+    oauth2Results.every((r) => r.failedTests === 0);
   const allPassed =
     workflowsPassed &&
     toolHealthPassed &&
     resourcesPassed &&
     promptsPassed &&
-    samplingPassed;
+    samplingPassed &&
+    oauth2Passed;
 
   const report: EvaluationReport = {
     config,
@@ -425,6 +463,7 @@ export async function evaluate(
     resourceResults,
     promptResults,
     samplingResults,
+    oauth2Results,
     passed: allPassed,
     timestamp: new Date(),
   };
@@ -440,6 +479,7 @@ export async function evaluate(
           resourceResults.length > 0,
           promptResults.length > 0,
           samplingResults.length > 0,
+          oauth2Results.length > 0,
         ].filter(Boolean).length > 1;
 
       if (hasMultipleTypes) {
@@ -470,6 +510,17 @@ export async function evaluate(
             const status = result.passed ? "✓ PASSED" : "✗ FAILED";
             console.log(
               `${status} ${result.suiteName} (${result.passedTests}/${result.totalTests} tests passed, ${result.averageLatency.toFixed(0)}ms avg)`,
+            );
+          }
+        }
+        if (oauth2Results.length > 0) {
+          console.log("\n" + "=".repeat(60));
+          console.log("OAUTH 2.1 AUTHENTICATION SUMMARY");
+          console.log("=".repeat(60));
+          for (const result of oauth2Results) {
+            const status = result.failedTests === 0 ? "✓ PASSED" : "✗ FAILED";
+            console.log(
+              `${status} ${result.name} (${result.passedTests}/${result.totalTests} tests passed, ${result.duration}ms)`,
             );
           }
         }
@@ -552,6 +603,29 @@ export async function evaluate(
             }
           }
         }
+      } else if (oauth2Results.length > 0) {
+        // Basic OAuth 2.1 results reporting
+        console.log("\n" + "=".repeat(60));
+        console.log("OAUTH 2.1 AUTHENTICATION RESULTS");
+        console.log("=".repeat(60));
+        for (const result of oauth2Results) {
+          const status = result.failedTests === 0 ? "✓ PASSED" : "✗ FAILED";
+          console.log(`\n${status} ${result.name}`);
+          console.log(
+            `Tests: ${result.passedTests}/${result.totalTests} passed`,
+          );
+          console.log(`Duration: ${result.duration}ms`);
+
+          // Show failed tests
+          if (result.failedTests > 0) {
+            console.log("\nFailed tests:");
+            for (const testResult of result.results.filter((r) => !r.success)) {
+              console.log(
+                `  ✗ ${testResult.name} (${testResult.flow}): ${testResult.error || "Unknown error"}`,
+              );
+            }
+          }
+        }
       }
       break;
     }
@@ -597,4 +671,5 @@ export { ToolHealthResult, ToolTestResult } from "./tool-health.js";
 export { ResourceSuiteResult } from "./resource.js";
 export { PromptSuiteResult } from "./prompt.js";
 export { SamplingSuiteResult } from "./sampling.js";
+export { OAuth2SuiteResult, OAuth2TestResult } from "../auth/oauth-runner.js";
 export { runLlmJudge, LlmJudgeResult } from "./llm-judge.js";

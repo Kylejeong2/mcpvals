@@ -85,22 +85,30 @@ describe("evaluate", () => {
     const consoleReporterModule = await import("../src/eval/reporters/console");
 
     vi.mocked(configModule.loadConfig).mockImplementation(mockLoadConfig);
-    // @ts-expect-error - Mock implementations don't need full interface
     vi.mocked(runnerModule.ServerRunner).mockImplementation(
-      () => mockServerRunner,
+      () =>
+        mockServerRunner as unknown as InstanceType<
+          typeof runnerModule.ServerRunner
+        >,
     );
-    // @ts-expect-error - Mock implementations don't need full interface
     vi.mocked(deterministicModule.DeterministicEvaluator).mockImplementation(
-      () => mockDeterministicEvaluator,
+      () =>
+        mockDeterministicEvaluator as unknown as InstanceType<
+          typeof deterministicModule.DeterministicEvaluator
+        >,
     );
-    // @ts-expect-error - Mock implementations don't need full interface
     vi.mocked(toolHealthModule.ToolTester).mockImplementation(
-      () => mockToolTester,
+      () =>
+        mockToolTester as unknown as InstanceType<
+          typeof toolHealthModule.ToolTester
+        >,
     );
     vi.mocked(llmJudgeModule.runLlmJudge).mockImplementation(mockRunLlmJudge);
-    // @ts-expect-error - Mock implementations don't need full interface
     vi.mocked(consoleReporterModule.ConsoleReporter).mockImplementation(
-      () => mockConsoleReporter,
+      () =>
+        mockConsoleReporter as unknown as InstanceType<
+          typeof consoleReporterModule.ConsoleReporter
+        >,
     );
 
     // Default mock implementations
@@ -158,7 +166,9 @@ describe("evaluate", () => {
           parallel: false,
           tests: [
             {
-              name: "add",
+              name: "add" as unknown as string & {
+                readonly [Symbol.toStringTag]: "ToolName";
+              },
               args: { a: 2, b: 3 },
               expectedResult: 5,
               retries: 0,
@@ -166,6 +176,10 @@ describe("evaluate", () => {
           ],
         },
       ],
+      resourceSuites: [],
+      promptSuites: [],
+      samplingSuites: [],
+      oauth2Suites: [],
       timeout: 30000,
       llmJudge: false,
       judgeModel: "gpt-4o",
@@ -302,7 +316,7 @@ describe("evaluate", () => {
       mockLoadConfig.mockResolvedValue(emptyConfig);
 
       await expect(evaluate("empty-config.json")).rejects.toThrow(
-        "Configuration must include workflows, toolHealthSuites, resourceSuites, promptSuites, or samplingSuites",
+        "Configuration must include workflows, toolHealthSuites, resourceSuites, promptSuites, samplingSuites, or oauth2Suites",
       );
     });
 

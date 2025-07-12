@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { readFile } from "fs/promises";
 import { resolve } from "path";
+import { OAuth2TestSuiteSchema } from "../auth/oauth.js";
 
 // Branded types for better type safety
 const ToolNameSchema = z.string().min(1).brand<"ToolName">();
@@ -744,6 +745,7 @@ export const ConfigSchema = z.object({
   resourceSuites: z.array(ResourceSuiteSchema).optional().default([]),
   promptSuites: z.array(PromptSuiteSchema).optional().default([]),
   samplingSuites: z.array(SamplingSuiteSchema).optional().default([]),
+  oauth2Suites: z.array(OAuth2TestSuiteSchema).optional().default([]),
   timeout: z.number().min(1).optional().default(30000),
   llmJudge: z.boolean().default(false),
   openaiKey: z.string().optional(),
@@ -781,6 +783,7 @@ export type SamplingPerformanceTest = z.infer<
 export type SamplingContentTest = z.infer<typeof SamplingContentTestSchema>;
 export type SamplingWorkflowTest = z.infer<typeof SamplingWorkflowTestSchema>;
 export type SamplingSuite = z.infer<typeof SamplingSuiteSchema>;
+export type OAuth2TestSuite = z.infer<typeof OAuth2TestSuiteSchema>;
 
 /**
  * Expand environment variables in a string
