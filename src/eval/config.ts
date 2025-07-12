@@ -2,16 +2,44 @@ import { z } from "zod";
 import { readFile } from "fs/promises";
 import { resolve } from "path";
 
+// Branded types for better type safety
+const ToolNameSchema = z.string().min(1).brand<"ToolName">();
+const PromptNameSchema = z.string().min(1).brand<"PromptName">();
+const ResourceUriSchema = z
+  .string()
+  .url()
+  .or(z.string().regex(/^[a-zA-Z][a-zA-Z0-9+.-]*:/))
+  .brand<"ResourceUri">();
+
+// Common argument schema with better validation
+const ArgumentValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.array(z.unknown()),
+  z.record(z.unknown()),
+  z.null(),
+]);
+
+const ArgumentsSchema = z.record(z.string(), ArgumentValueSchema);
+
 // Tool test schema for individual tool health testing
 export const ToolTestSchema = z.object({
-  name: z.string().describe("Tool name to test"),
+  name: ToolNameSchema.describe("Tool name to test"),
   description: z
     .string()
     .optional()
     .describe("Description of what this test does"),
-  args: z.record(z.unknown()).describe("Arguments to pass to the tool"),
+  args: ArgumentsSchema.describe("Arguments to pass to the tool"),
   expectedResult: z
-    .unknown()
+    .union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.array(z.unknown()),
+      z.record(z.unknown()),
+      z.null(),
+    ])
     .optional()
     .describe("Expected result for validation"),
   expectedError: z
@@ -89,9 +117,9 @@ export const ResourceTestSchema = z.object({
     .string()
     .optional()
     .describe("Description of what this test does"),
-  uri: z.string().describe("Resource URI to test"),
+  uri: ResourceUriSchema.describe("Resource URI to test"),
   expectedContent: z
-    .unknown()
+    .union([z.string(), z.array(z.string()), z.record(z.unknown()), z.null()])
     .optional()
     .describe("Expected content for validation"),
   expectedMimeType: z.string().optional().describe("Expected MIME type"),
@@ -180,14 +208,14 @@ export const ResourceSubscriptionTestSchema = z.object({
 
 // Prompt test schemas
 export const PromptTestSchema = z.object({
-  name: z.string().describe("Prompt name to test"),
+  name: PromptNameSchema.describe("Prompt name to test"),
   description: z
     .string()
     .optional()
     .describe("Description of what this test does"),
-  args: z.record(z.unknown()).describe("Arguments to pass to the prompt"),
+  args: ArgumentsSchema.describe("Arguments to pass to the prompt"),
   expectedContent: z
-    .unknown()
+    .union([z.string(), z.array(z.string()), z.record(z.unknown()), z.null()])
     .optional()
     .describe("Expected content patterns in the prompt output"),
   expectedMessages: z

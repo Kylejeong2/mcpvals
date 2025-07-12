@@ -305,107 +305,127 @@ export class PromptEvaluator {
     // Retry logic
     while (retryCount <= test.retries) {
       try {
-        // Set up timeout for the prompt call
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Prompt call timeout")), timeout),
-        );
+        // Set up timeout with better error message and cleanup
+        let timeoutId: NodeJS.Timeout | undefined;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(
+              new Error(
+                `Prompt call timeout after ${timeout}ms for prompt '${test.name}'`,
+              ),
+            );
+          }, timeout);
+        });
 
-        // Get the prompt
-        const resultPromise = this.runner.getPrompt(test.name, test.args);
-        const result = await Promise.race([resultPromise, timeoutPromise]);
+        try {
+          // Get the prompt
+          const resultPromise = this.runner.getPrompt(test.name, test.args);
+          const result = await Promise.race([resultPromise, timeoutPromise]);
 
-        const endTime = Date.now();
-        const latency = endTime - startTime;
+          // Clear timeout on success
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
 
-        // Check latency constraint
-        if (test.maxLatency && latency > test.maxLatency) {
-          return {
-            testName: test.description || `${test.name} test`,
-            promptName: test.name,
-            passed: false,
-            score: 0,
-            latency,
-            details: `Prompt call exceeded maximum latency: ${latency}ms > ${test.maxLatency}ms`,
-            retryCount,
-          };
-        }
+          const endTime = Date.now();
+          const latency = endTime - startTime;
 
-        // Validate expected content if provided
-        if (test.expectedContent !== undefined) {
-          const contentMatches = this.validatePromptContent(
-            result.messages,
-            test.expectedContent,
-          );
-          if (!contentMatches) {
+          // Check latency constraint
+          if (test.maxLatency && latency > test.maxLatency) {
             return {
               testName: test.description || `${test.name} test`,
               promptName: test.name,
               passed: false,
               score: 0,
               latency,
-              details: `Content mismatch. Expected: ${JSON.stringify(test.expectedContent)}`,
+              details: `Prompt call exceeded maximum latency: ${latency}ms > ${test.maxLatency}ms`,
               retryCount,
-              metadata: {
-                expectedContent: test.expectedContent,
-                actualMessages: result.messages,
-              },
             };
           }
-        }
 
-        // Validate expected message structure if provided
-        if (test.expectedMessages) {
-          const structureMatches = this.validateMessageStructure(
-            result.messages,
-            test.expectedMessages,
-          );
-          if (!structureMatches) {
+          // Validate expected content if provided
+          if (test.expectedContent !== undefined) {
+            const contentMatches = this.validatePromptContent(
+              result.messages,
+              test.expectedContent,
+            );
+            if (!contentMatches) {
+              return {
+                testName: test.description || `${test.name} test`,
+                promptName: test.name,
+                passed: false,
+                score: 0,
+                latency,
+                details: `Content mismatch. Expected: ${JSON.stringify(test.expectedContent)}`,
+                retryCount,
+                metadata: {
+                  expectedContent: test.expectedContent,
+                  actualMessages: result.messages,
+                },
+              };
+            }
+          }
+
+          // Validate expected message structure if provided
+          if (test.expectedMessages) {
+            const structureMatches = this.validateMessageStructure(
+              result.messages,
+              test.expectedMessages,
+            );
+            if (!structureMatches) {
+              return {
+                testName: test.description || `${test.name} test`,
+                promptName: test.name,
+                passed: false,
+                score: 0,
+                latency,
+                details: `Message structure mismatch`,
+                retryCount,
+                metadata: {
+                  expectedMessages: test.expectedMessages,
+                  actualMessages: result.messages,
+                },
+              };
+            }
+          }
+
+          // If we expected an error but didn't get one
+          if (test.expectError) {
             return {
               testName: test.description || `${test.name} test`,
               promptName: test.name,
               passed: false,
               score: 0,
               latency,
-              details: `Message structure mismatch`,
+              details: `Expected error "${test.expectError}" but prompt call succeeded`,
               retryCount,
               metadata: {
-                expectedMessages: test.expectedMessages,
-                actualMessages: result.messages,
+                expectedError: test.expectError,
+                actualResult: result,
               },
             };
           }
-        }
 
-        // If we expected an error but didn't get one
-        if (test.expectError) {
+          // Success case
           return {
             testName: test.description || `${test.name} test`,
             promptName: test.name,
-            passed: false,
-            score: 0,
+            passed: true,
+            score: 1.0,
             latency,
-            details: `Expected error "${test.expectError}" but prompt call succeeded`,
+            details: `Prompt call successful in ${latency}ms`,
             retryCount,
             metadata: {
-              expectedError: test.expectError,
-              actualResult: result,
+              result,
             },
           };
+        } catch (timeoutError) {
+          // Clean up timeout on any error
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          throw timeoutError;
         }
-
-        // Success case
-        return {
-          testName: test.description || `${test.name} test`,
-          promptName: test.name,
-          passed: true,
-          score: 1.0,
-          latency,
-          details: `Prompt call successful in ${latency}ms`,
-          retryCount,
-          metadata: {
-            result,
-          },
-        };
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);

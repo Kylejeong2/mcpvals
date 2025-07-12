@@ -18,7 +18,14 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { execa, ExecaChildProcess } from "execa";
 import { ServerConfig } from "./config.js";
-import { TraceStore } from "./trace.js";
+import { TraceStore, TraceStoreOptions } from "./trace.js";
+import { PerformanceMonitor, PerformanceThresholds } from "./performance.js";
+import {
+  ResilienceManager,
+  RetryOptions,
+  CircuitBreakerOptions,
+  RateLimiterOptions,
+} from "./resilience.js";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText, tool } from "ai";
 import { z } from "zod";
@@ -26,6 +33,12 @@ import { z } from "zod";
 export interface ServerRunnerOptions {
   timeout?: number;
   debug?: boolean;
+  performanceThresholds?: Partial<PerformanceThresholds>;
+  traceStoreOptions?: TraceStoreOptions;
+  retryOptions?: Partial<RetryOptions>;
+  circuitBreakerOptions?: Partial<CircuitBreakerOptions>;
+  rateLimiterOptions?: Partial<RateLimiterOptions>;
+  enableResilience?: boolean;
 }
 
 export class ServerRunner {
@@ -34,26 +47,68 @@ export class ServerRunner {
   private traceStore: TraceStore;
   private serverConfig: ServerConfig;
   private options: ServerRunnerOptions;
+  private performanceMonitor: PerformanceMonitor;
+  private resilienceManager: ResilienceManager;
 
   constructor(
     serverConfig: ServerConfig,
-    traceStore: TraceStore,
+    traceStore?: TraceStore,
     options: ServerRunnerOptions = {},
   ) {
     this.serverConfig = serverConfig;
-    this.traceStore = traceStore;
+    this.traceStore = traceStore || new TraceStore(options.traceStoreOptions);
     this.options = options;
+
+    // Initialize performance monitoring
+    this.performanceMonitor = new PerformanceMonitor(
+      options.performanceThresholds,
+    );
+
+    // Initialize resilience management
+    this.resilienceManager = new ResilienceManager();
+
+    if (options.enableResilience !== false) {
+      // Create default resilience components
+      this.resilienceManager.createRetryHandler(
+        "default",
+        options.retryOptions,
+      );
+      this.resilienceManager.createCircuitBreaker(
+        "mcp-server",
+        options.circuitBreakerOptions,
+      );
+      this.resilienceManager.createRateLimiter(
+        "llm-calls",
+        options.rateLimiterOptions,
+      );
+    }
   }
 
   /**
    * Start the MCP server and establish connection
    */
   async start(): Promise<void> {
-    if (this.serverConfig.transport === "stdio") {
-      await this.startStdioServer();
-    } else {
-      await this.startHttpServer();
+    // Start performance monitoring
+    this.performanceMonitor.start();
+
+    if (this.options.debug) {
+      console.log("Starting performance monitoring...");
     }
+
+    // Start server with resilience
+    await this.resilienceManager.executeWithResilience(
+      async () => {
+        if (this.serverConfig.transport === "stdio") {
+          await this.startStdioServer();
+        } else {
+          await this.startHttpServer();
+        }
+      },
+      {
+        retryHandler: "default",
+        circuitBreaker: "mcp-server",
+      },
+    );
   }
 
   /**
@@ -226,10 +281,18 @@ export class ServerRunner {
     });
 
     try {
-      const response = await client.callTool({
-        name,
-        arguments: args,
-      });
+      const response = await this.resilienceManager.executeWithResilience(
+        async () => {
+          return await client.callTool({
+            name,
+            arguments: args,
+          });
+        },
+        {
+          retryHandler: "default",
+          circuitBreaker: "mcp-server",
+        },
+      );
 
       // Record the result
       this.traceStore.addToolResult({
@@ -805,13 +868,21 @@ Focus on completing the tasks accurately and efficiently.`;
           apiKey: anthropicApiKey,
         });
 
-        const result = await generateText({
-          model: anthropic("claude-3-5-sonnet-20241022"),
-          system: systemPrompt,
-          messages,
-          tools: aiTools,
-          maxSteps: 5,
-        });
+        const result = await this.resilienceManager.executeWithResilience(
+          async () => {
+            return await generateText({
+              model: anthropic("claude-3-5-sonnet-20241022"),
+              system: systemPrompt,
+              messages,
+              tools: aiTools,
+              maxSteps: 5,
+            });
+          },
+          {
+            retryHandler: "default",
+            rateLimiter: "llm-calls",
+          },
+        );
 
         // Extract text and tool results from generateText result
         const finalText = result.text;
@@ -886,6 +957,52 @@ Focus on completing the tasks accurately and efficiently.`;
    * Stop the server and clean up
    */
   async stop(): Promise<void> {
+    // Stop performance monitoring
+    this.performanceMonitor.stop();
+
+    if (this.options.debug) {
+      // Report final performance metrics
+      const metrics = this.performanceMonitor.getCurrentMetrics();
+      const memoryDelta = this.performanceMonitor.getMemoryDelta();
+      const resilienceMetrics = this.resilienceManager.getAllMetrics();
+      const traceMemory = this.traceStore.getMemoryUsage();
+
+      console.log("=== Final Performance Report ===");
+      if (metrics) {
+        console.log(`Uptime: ${(metrics.uptime / 1000).toFixed(1)}s`);
+        console.log(
+          `Memory Delta: Heap +${(memoryDelta.heapUsed / (1024 * 1024)).toFixed(1)}MB, RSS +${(memoryDelta.rss / (1024 * 1024)).toFixed(1)}MB`,
+        );
+        console.log(`GC Count: ${metrics.gcCount || 0}`);
+      }
+      console.log(
+        `Trace Memory: ${traceMemory.total} entries (${traceMemory.traces} traces, ${traceMemory.toolCalls} tool calls)`,
+      );
+
+      // Report resilience metrics
+      const circuitBreakerEntries = Object.entries(
+        resilienceMetrics.circuitBreakers,
+      );
+      if (circuitBreakerEntries.length > 0) {
+        console.log("Circuit Breakers:");
+        circuitBreakerEntries.forEach(([name, metrics]) => {
+          console.log(
+            `  ${name}: ${metrics.state} (${metrics.failureCount} failures, ${metrics.successCount} successes)`,
+          );
+        });
+      }
+
+      const rateLimiterEntries = Object.entries(resilienceMetrics.rateLimiters);
+      if (rateLimiterEntries.length > 0) {
+        console.log("Rate Limiters:");
+        rateLimiterEntries.forEach(([name, metrics]) => {
+          console.log(
+            `  ${name}: ${metrics.requestsInWindow}/${metrics.maxRequests} requests, ${metrics.burstTokens} burst tokens`,
+          );
+        });
+      }
+    }
+
     if (this.client) {
       await this.client.close();
       this.client = undefined;
@@ -896,8 +1013,32 @@ Focus on completing the tasks accurately and efficiently.`;
       this.process = undefined;
     }
 
+    // Clean up trace store
+    this.traceStore.destroy();
+
     if (this.options.debug) {
-      console.log("MCP server stopped");
+      console.log("MCP server stopped and resources cleaned up");
     }
+  }
+
+  /**
+   * Get performance metrics
+   */
+  getPerformanceMetrics() {
+    return {
+      current: this.performanceMonitor.getCurrentMetrics(),
+      memoryDelta: this.performanceMonitor.getMemoryDelta(),
+      resilience: this.resilienceManager.getAllMetrics(),
+      traceMemory: this.traceStore.getMemoryUsage(),
+      isHealthy: this.performanceMonitor.isMemoryHealthy(),
+    };
+  }
+
+  /**
+   * Force cleanup of resources
+   */
+  forceCleanup(): void {
+    this.traceStore.forceCleanup();
+    this.performanceMonitor.forceGarbageCollection();
   }
 }
