@@ -1,0 +1,30 @@
+{
+  "name": "mcpvals-examples",
+  "version": "1.0.0",
+  "description": "Example MCP servers and configurations for MCPVals testing",
+  "type": "module",
+  "scripts": {
+    "start": "node servers/simple-mcp-server.js",
+    "test:simple": "mcpvals eval ./basic/simple-server-eval.config.json",
+    "test:simple-prompt": "mcpvals eval ./basic/simple-prompt-eval.config.json",
+    "test:tools": "mcpvals eval ./tools/tool-health-eval.config.json",
+    "test:resources": "mcpvals eval ./resources/resource-eval.config.json",
+    "test:prompts": "mcpvals eval ./prompts/prompt-eval.config.json",
+    "test:sampling": "mcpvals eval ./sampling/sampling-capability-eval.config.json",
+    "test:weather": "mcpvals eval ./integrations/weather-server-eval.config.json",
+    "test:github": "mcpvals eval ./integrations/github-server-eval.config.json",
+    "test:remote": "mcpvals eval ./remote/remote-server-eval.config.json",
+    "test:advanced": "mcpvals eval ./advanced/llm-judge-eval.config.json",
+    "test:ts": "tsx run-evaluation.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "devDependencies": {
+    "mcpvals": "^0.0.1",
+    "tsx": "^4.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

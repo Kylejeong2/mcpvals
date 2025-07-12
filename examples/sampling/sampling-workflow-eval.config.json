@@ -1,0 +1,112 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["workflow-sampling-server.js"]
+  },
+  "samplingSuites": [
+    {
+      "name": "Sampling Workflow Tests",
+      "description": "End-to-end workflow testing for sampling functionality",
+      "workflowTests": [
+        {
+          "name": "complete-approval-workflow",
+          "description": "Test complete workflow from request to response with approval",
+          "steps": [
+            {
+              "stepType": "request",
+              "action": "Create sampling request with user message",
+              "expectedOutcome": "request created"
+            },
+            {
+              "stepType": "approval",
+              "action": "User approves the sampling request",
+              "expectedOutcome": "approved",
+              "userResponse": "approve"
+            },
+            {
+              "stepType": "response",
+              "action": "Verify response was generated",
+              "expectedOutcome": "response received"
+            },
+            {
+              "stepType": "validation",
+              "action": "requestId",
+              "expectedOutcome": "workflow state valid"
+            }
+          ],
+          "expectSuccess": true
+        },
+        {
+          "name": "rejection-workflow",
+          "description": "Test workflow with user rejection",
+          "steps": [
+            {
+              "stepType": "request",
+              "action": "Create sampling request",
+              "expectedOutcome": "request created"
+            },
+            {
+              "stepType": "approval",
+              "action": "User rejects the sampling request",
+              "expectedOutcome": "rejected",
+              "userResponse": "reject"
+            }
+          ],
+          "expectSuccess": false
+        },
+        {
+          "name": "modification-workflow",
+          "description": "Test workflow with user modification",
+          "steps": [
+            {
+              "stepType": "request",
+              "action": "Create sampling request",
+              "expectedOutcome": "request created"
+            },
+            {
+              "stepType": "approval",
+              "action": "User modifies and approves the request",
+              "expectedOutcome": "approved",
+              "userResponse": "modify"
+            },
+            {
+              "stepType": "response",
+              "action": "Verify modified response was generated",
+              "expectedOutcome": "response received"
+            }
+          ],
+          "expectSuccess": true
+        }
+      ],
+      "requestTests": [
+        {
+          "name": "context-included-request",
+          "description": "Test sampling request with included context",
+          "includeContext": [
+            {
+              "type": "text",
+              "text": "This is contextual information that should be included in the sampling request."
+            },
+            {
+              "type": "resource",
+              "uri": "context://example-resource"
+            }
+          ],
+          "messages": [
+            {
+              "role": "user",
+              "content": {
+                "type": "text",
+                "text": "Please use the provided context to answer my question."
+              }
+            }
+          ],
+          "expectUserApproval": true,
+          "simulateUserResponse": "approve"
+        }
+      ]
+    }
+  ],
+  "timeout": 45000
+}
