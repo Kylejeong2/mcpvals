@@ -49,6 +49,7 @@ describe("evaluate", () => {
     report: Mock;
     reportToolHealth: Mock;
     reportCombined: Mock;
+    reportCombinedAll: Mock;
   };
 
   beforeEach(async () => {
@@ -72,6 +73,7 @@ describe("evaluate", () => {
       report: vi.fn(),
       reportToolHealth: vi.fn(),
       reportCombined: vi.fn(),
+      reportCombinedAll: vi.fn(),
     };
 
     // Apply mocks using vi.mocked
@@ -300,7 +302,7 @@ describe("evaluate", () => {
       mockLoadConfig.mockResolvedValue(emptyConfig);
 
       await expect(evaluate("empty-config.json")).rejects.toThrow(
-        "Configuration must include either workflows or toolHealthSuites",
+        "Configuration must include workflows, toolHealthSuites, resourceSuites, promptSuites, or samplingSuites",
       );
     });
 
@@ -372,7 +374,10 @@ describe("evaluate", () => {
     it("should use different reporters", async () => {
       await evaluate("test-config.json", { reporter: "console" });
 
-      expect(mockConsoleReporter.reportCombined).toHaveBeenCalledWith(
+      expect(mockConsoleReporter.reportCombinedAll).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.any(Array),
+        expect.any(Array),
         expect.any(Array),
         expect.any(Array),
       );
@@ -615,7 +620,10 @@ describe("evaluate", () => {
     it("should use combined reporter for both", async () => {
       await evaluate("test-config.json");
 
-      expect(mockConsoleReporter.reportCombined).toHaveBeenCalledWith(
+      expect(mockConsoleReporter.reportCombinedAll).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.any(Array),
+        expect.any(Array),
         expect.any(Array),
         expect.any(Array),
       );

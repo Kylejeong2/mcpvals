@@ -4,7 +4,7 @@ const config = {
   server: {
     transport: "stdio",
     command: "node", // automatically swapped to process.execPath by MCPVals
-    args: ["./example/simple-mcp-server.js"],
+    args: ["./servers/simple-mcp-server.js"],
     env: {
       // Any env vars you need – interpolation works in TS too
       NODE_ENV: "test",

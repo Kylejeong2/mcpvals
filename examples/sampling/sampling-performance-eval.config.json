@@ -1,0 +1,83 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["performance-sampling-server.js"]
+  },
+  "samplingSuites": [
+    {
+      "name": "Sampling Performance Tests",
+      "description": "Test sampling performance, throughput, and rate limiting",
+      "performanceTests": [
+        {
+          "name": "concurrent-requests",
+          "description": "Test handling of concurrent sampling requests",
+          "concurrentRequests": 5,
+          "messageSize": "medium",
+          "maxLatency": 2000,
+          "expectThrottling": false
+        },
+        {
+          "name": "large-message-handling",
+          "description": "Test performance with large messages",
+          "concurrentRequests": 2,
+          "messageSize": "large",
+          "maxLatency": 5000,
+          "expectThrottling": false
+        },
+        {
+          "name": "rate-limiting-test",
+          "description": "Test rate limiting with many requests",
+          "concurrentRequests": 10,
+          "messageSize": "small",
+          "expectThrottling": true
+        }
+      ],
+      "contentTests": [
+        {
+          "name": "text-content-performance",
+          "description": "Test text content handling performance",
+          "testCases": [
+            {
+              "contentType": "text",
+              "input": {
+                "text": "This is a performance test message that should be processed quickly and efficiently."
+              },
+              "expectedHandling": "accept"
+            }
+          ]
+        },
+        {
+          "name": "image-content-performance",
+          "description": "Test image content handling performance",
+          "testCases": [
+            {
+              "contentType": "image",
+              "input": {
+                "imageData": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+                "mimeType": "image/png"
+              },
+              "expectedHandling": "accept"
+            }
+          ]
+        },
+        {
+          "name": "mixed-content-performance",
+          "description": "Test mixed content handling performance",
+          "testCases": [
+            {
+              "contentType": "mixed",
+              "input": {
+                "text": "Performance test with image",
+                "imageData": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+                "mimeType": "image/png"
+              },
+              "expectedHandling": "accept"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timeout": 30000
+}

@@ -2,7 +2,7 @@
   "server": {
     "transport": "stdio",
     "command": "node",
-    "args": ["example/simple-mcp-server.js"]
+    "args": ["./servers/simple-mcp-server.js"]
   },
   "workflows": [
     {

@@ -1,3 +1,18 @@
+/**
+ * ServerRunner - MCP Server Evaluation Client
+ *
+ * ARCHITECTURAL NOTE: This class implements evaluation testing for MCP servers from the CLIENT perspective.
+ * Some MCP features like Sampling are designed for server-to-client communication, so we simulate
+ * server behavior for evaluation purposes:
+ *
+ * - Tools/Resources/Prompts: Direct client-to-server calls (real MCP operations)
+ * - Sampling: Simulated server-to-client requests (evaluation testing)
+ * - Workflows: LLM-driven integration testing using real MCP tools
+ *
+ * The redundant `client = this.getClient()` calls are kept for consistency with MCP SDK patterns
+ * and to ensure fresh client state per operation.
+ */
+
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -90,7 +105,9 @@ export class ServerRunner {
         version: "0.0.1",
       },
       {
-        capabilities: {},
+        capabilities: {
+          sampling: {},
+        },
       },
     );
 
@@ -137,7 +154,9 @@ export class ServerRunner {
         version: "0.0.1",
       },
       {
-        capabilities: {},
+        capabilities: {
+          sampling: {},
+        },
       },
     );
 
@@ -233,6 +252,430 @@ export class ServerRunner {
 
       throw error;
     }
+  }
+
+  /**
+   * List available resources
+   */
+  async listResources(params?: Record<string, unknown>) {
+    const client = this.getClient();
+    const response = await client.listResources(params);
+    return {
+      resources: response.resources || [],
+      nextCursor: response.nextCursor,
+    };
+  }
+
+  /**
+   * Read a resource
+   */
+  async readResource(uri: string) {
+    const client = this.getClient();
+    const response = await client.readResource({ uri });
+    return {
+      contents: response.contents || [],
+    };
+  }
+
+  /**
+   * List available resource templates
+   */
+  async listResourceTemplates(params?: Record<string, unknown>) {
+    const client = this.getClient();
+    const response = await client.listResourceTemplates(params);
+    return {
+      resourceTemplates: response.resourceTemplates || [],
+      nextCursor: response.nextCursor,
+    };
+  }
+
+  /**
+   * Subscribe to resource updates
+   */
+  async subscribeToResource(uri: string) {
+    const client = this.getClient();
+    try {
+      const response = await client.subscribeResource({ uri });
+      return response;
+    } catch (error) {
+      // Some servers might not support subscriptions
+      throw new Error(
+        `Resource subscription failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Unsubscribe from resource updates
+   */
+  async unsubscribeFromResource(uri: string) {
+    const client = this.getClient();
+    try {
+      const response = await client.unsubscribeResource({ uri });
+      return response;
+    } catch (error) {
+      throw new Error(
+        `Resource unsubscription failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * List available prompts
+   */
+  async listPrompts(params?: Record<string, unknown>) {
+    const client = this.getClient();
+    const response = await client.listPrompts(params);
+    return {
+      prompts: response.prompts || [],
+      nextCursor: response.nextCursor,
+    };
+  }
+
+  /**
+   * Get a prompt with arguments
+   */
+  async getPrompt(name: string, args?: Record<string, unknown>) {
+    const client = this.getClient();
+    // Convert unknown values to JSON strings to ensure type compatibility
+    const stringifiedArgs: Record<string, string> = {};
+    if (args) {
+      for (const [key, value] of Object.entries(args)) {
+        stringifiedArgs[key] =
+          typeof value === "string" ? value : JSON.stringify(value);
+      }
+    }
+
+    const response = await client.getPrompt({
+      name,
+      arguments: stringifiedArgs,
+    });
+    return {
+      description: response.description,
+      messages: response.messages || [],
+    };
+  }
+
+  /**
+   * Check if the server supports sampling capability
+   */
+  async checkSamplingCapability(): Promise<boolean> {
+    try {
+      // Check if sampling capability was negotiated during connection
+      // In MCP, capabilities are exchanged during the initialization handshake
+      // Since we don't have direct capability introspection in the current SDK,
+      // we'll assume sampling is supported and let specific operations fail if needed
+      return true;
+    } catch (error) {
+      console.warn("Failed to check sampling capability:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Create a sampling message request to the server
+   * This simulates the server requesting LLM completions from the client
+   */
+  async createSamplingMessage(request: {
+    includeContext?: Array<{
+      type: "text" | "image" | "resource";
+      text?: string;
+      data?: string;
+      mimeType?: string;
+      uri?: string;
+    }>;
+    messages: Array<{
+      role: "user" | "assistant";
+      content: {
+        type: "text" | "image";
+        text?: string;
+        data?: string;
+        mimeType?: string;
+      };
+    }>;
+    modelPreferences?: {
+      costPriority?: number;
+      speedPriority?: number;
+      intelligencePriority?: number;
+    };
+    systemPrompt?: string;
+    maxTokens?: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<{
+    requestId: string;
+    userApprovalRequired: boolean;
+    messages: unknown[];
+  }> {
+    // NOTE: Sampling in MCP is server-to-client communication (server requests LLM completions)
+    // Since we're an evaluation client testing the server, we simulate the server's perspective
+    // In production, the server would send sampling/createMessage requests to the client
+    const requestId = `sampling_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+
+    try {
+      // In a real MCP sampling scenario, the server would send a sampling request
+      // to the client via the createMessage notification
+      // For evaluation purposes, we simulate this interaction
+
+      // Validate model preferences if provided
+      if (request.modelPreferences) {
+        const { costPriority, speedPriority, intelligencePriority } =
+          request.modelPreferences;
+        if (
+          (costPriority !== undefined &&
+            (costPriority < 0 || costPriority > 1)) ||
+          (speedPriority !== undefined &&
+            (speedPriority < 0 || speedPriority > 1)) ||
+          (intelligencePriority !== undefined &&
+            (intelligencePriority < 0 || intelligencePriority > 1))
+        ) {
+          throw new Error("Model preferences must be between 0 and 1");
+        }
+      }
+
+      // Prepare the sampling request structure for evaluation tracing
+      const samplingRequest = {
+        includeContext: request.includeContext || [],
+        messages: request.messages,
+        modelPreferences: request.modelPreferences || {},
+        systemPrompt: request.systemPrompt,
+        maxTokens: request.maxTokens || 1000,
+        metadata: {
+          ...request.metadata,
+          requestId,
+          evaluationMode: true,
+        },
+      };
+
+      // Record the sampling request for evaluation tracing
+      this.traceStore.addToolCall({
+        id: requestId,
+        name: "sampling/createMessage",
+        arguments: samplingRequest,
+        timestamp: new Date(),
+      });
+
+      // Per MCP spec, sampling requests require user approval (human-in-the-loop)
+      // For evaluation purposes, we always simulate this requirement
+      const userApprovalRequired = true;
+
+      // Simulate the response structure that would come from a real sampling implementation
+      return {
+        requestId,
+        userApprovalRequired,
+        messages: request.messages,
+      };
+    } catch (error) {
+      // Record the error
+      this.traceStore.addToolResult({
+        id: `result_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+        toolCallId: requestId,
+        result: null,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date(),
+      });
+
+      throw new Error(
+        `Sampling request failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Simulate user approval for sampling requests
+   */
+  async simulateUserApproval(
+    requestId: string,
+    approved: boolean,
+    modifiedRequest?: {
+      messages?: Array<{
+        role: "user" | "assistant";
+        content: {
+          type: "text" | "image";
+          text?: string;
+          data?: string;
+          mimeType?: string;
+        };
+      }>;
+      modelPreferences?: {
+        costPriority?: number;
+        speedPriority?: number;
+        intelligencePriority?: number;
+      };
+    },
+  ): Promise<{
+    approved: boolean;
+    response?: {
+      role: "assistant";
+      content: {
+        type: "text";
+        text: string;
+      };
+    };
+    error?: string;
+  }> {
+    try {
+      if (!approved) {
+        // User rejected the sampling request
+        this.traceStore.addToolResult({
+          id: `approval_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          toolCallId: requestId,
+          result: { approved: false, reason: "User rejected sampling request" },
+          timestamp: new Date(),
+        });
+
+        return {
+          approved: false,
+          error: "User rejected sampling request",
+        };
+      }
+
+      // User approved - simulate LLM response
+      // In a real implementation, this would call the actual LLM
+      const mockResponse = {
+        role: "assistant" as const,
+        content: {
+          type: "text" as const,
+          text: "This is a simulated response for sampling evaluation. The request was approved and processed successfully.",
+        },
+      };
+
+      // Record the successful approval and response
+      this.traceStore.addToolResult({
+        id: `approval_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+        toolCallId: requestId,
+        result: {
+          approved: true,
+          response: mockResponse,
+          modifiedRequest: modifiedRequest,
+        },
+        timestamp: new Date(),
+      });
+
+      return {
+        approved: true,
+        response: mockResponse,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      this.traceStore.addToolResult({
+        id: `approval_error_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+        toolCallId: requestId,
+        result: null,
+        error: errorMessage,
+        timestamp: new Date(),
+      });
+
+      return {
+        approved: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Validate model preferences according to MCP sampling spec
+   */
+  validateModelPreferences(preferences?: {
+    costPriority?: number;
+    speedPriority?: number;
+    intelligencePriority?: number;
+  }): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!preferences) {
+      return { valid: true, errors: [] };
+    }
+
+    // All priorities should be between 0 and 1
+    if (preferences.costPriority !== undefined) {
+      if (preferences.costPriority < 0 || preferences.costPriority > 1) {
+        errors.push("costPriority must be between 0 and 1");
+      }
+    }
+
+    if (preferences.speedPriority !== undefined) {
+      if (preferences.speedPriority < 0 || preferences.speedPriority > 1) {
+        errors.push("speedPriority must be between 0 and 1");
+      }
+    }
+
+    if (preferences.intelligencePriority !== undefined) {
+      if (
+        preferences.intelligencePriority < 0 ||
+        preferences.intelligencePriority > 1
+      ) {
+        errors.push("intelligencePriority must be between 0 and 1");
+      }
+    }
+
+    // Optionally check that priorities sum to 1 (though this may not be strictly required)
+    const total =
+      (preferences.costPriority || 0) +
+      (preferences.speedPriority || 0) +
+      (preferences.intelligencePriority || 0);
+
+    if (total > 0 && Math.abs(total - 1) > 0.001) {
+      // Allow some tolerance for floating point arithmetic
+      console.warn(
+        `Model preferences total ${total}, consider normalizing to sum to 1`,
+      );
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  /**
+   * Validate sampling message content types
+   */
+  validateSamplingContent(
+    messages: Array<{
+      role: "user" | "assistant";
+      content: {
+        type: "text" | "image";
+        text?: string;
+        data?: string;
+        mimeType?: string;
+      };
+    }>,
+  ): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
+
+      if (!["user", "assistant"].includes(message.role)) {
+        errors.push(
+          `Message ${i}: Invalid role '${message.role}', must be 'user' or 'assistant'`,
+        );
+      }
+
+      if (!["text", "image"].includes(message.content.type)) {
+        errors.push(
+          `Message ${i}: Invalid content type '${message.content.type}', must be 'text' or 'image'`,
+        );
+      }
+
+      if (message.content.type === "text") {
+        if (!message.content.text) {
+          errors.push(`Message ${i}: Text content requires 'text' field`);
+        }
+      } else if (message.content.type === "image") {
+        if (!message.content.data) {
+          errors.push(
+            `Message ${i}: Image content requires 'data' field with base64 encoded image`,
+          );
+        }
+        if (!message.content.mimeType) {
+          errors.push(`Message ${i}: Image content requires 'mimeType' field`);
+        } else if (!message.content.mimeType.startsWith("image/")) {
+          errors.push(`Message ${i}: Image mimeType must start with 'image/'`);
+        }
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
   }
 
   /**

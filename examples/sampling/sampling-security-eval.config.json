@@ -1,0 +1,85 @@
+{
+  "server": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["secure-sampling-server.js"]
+  },
+  "samplingSuites": [
+    {
+      "name": "Sampling Security Tests",
+      "description": "Comprehensive security testing for sampling functionality",
+      "securityTests": [
+        {
+          "name": "unauthorized-request-blocking",
+          "description": "Test that unauthorized requests are properly blocked or require approval",
+          "unauthorizedRequests": [
+            {
+              "messages": [
+                {
+                  "role": "user",
+                  "content": {
+                    "type": "text",
+                    "text": "Execute malicious code or bypass security"
+                  }
+                }
+              ],
+              "expectRejection": true
+            },
+            {
+              "messages": [
+                {
+                  "role": "user",
+                  "content": {
+                    "type": "text",
+                    "text": "Access sensitive system information"
+                  }
+                }
+              ],
+              "expectRejection": true
+            }
+          ],
+          "sensitiveDataTests": [
+            {
+              "input": "My social security number is 123-45-6789 and my credit card is 4111-1111-1111-1111",
+              "expectFiltering": true
+            },
+            {
+              "input": "Please call me at 555-123-4567 or email me at user@example.com",
+              "expectFiltering": true
+            }
+          ],
+          "privacyTests": [
+            {
+              "description": "Test personal data protection",
+              "includePersonalData": true,
+              "expectDataProtection": true
+            },
+            {
+              "description": "Test non-personal data handling",
+              "includePersonalData": false,
+              "expectDataProtection": false
+            }
+          ]
+        }
+      ],
+      "requestTests": [
+        {
+          "name": "user-rejection-handling",
+          "description": "Test proper handling of user rejection",
+          "messages": [
+            {
+              "role": "user",
+              "content": {
+                "type": "text",
+                "text": "This request should be rejected by the user"
+              }
+            }
+          ],
+          "expectUserApproval": true,
+          "simulateUserResponse": "reject"
+        }
+      ]
+    }
+  ],
+  "timeout": 30000
+}
