@@ -91,6 +91,35 @@ export default {
     },
   ],
 
+  // Test OAuth 2.1 authentication flows
+  oauth2Suites: [
+    {
+      name: "OAuth Security Tests",
+      authorizationCodeTests: [
+        {
+          name: "Authorization Code with PKCE",
+          flow: "authorization_code",
+          server: {
+            authorizationEndpoint: "https://auth.example.com/authorize",
+            tokenEndpoint: "https://auth.example.com/token",
+            supportedGrantTypes: ["authorization_code"],
+            supportedScopes: ["read", "write"],
+            pkceRequired: true,
+          },
+          client: {
+            clientId: "test-client-id",
+            responseType: "code",
+            scope: ["read", "write"],
+            redirectUri: "https://app.example.com/callback",
+            pkce: { enabled: true, codeChallengeMethod: "S256" },
+          },
+          simulateUserConsent: true,
+          expectedResult: "success",
+        },
+      ],
+    },
+  ],
+
   // Test multi-step, LLM-driven workflows
   workflows: [
     {
@@ -136,6 +165,9 @@ npx mcpvals eval mcp-eval.config.ts --prompts-only
 # Run only sampling evaluation tests
 npx mcpvals eval mcp-eval.config.ts --sampling-only
 
+# Run only OAuth 2.1 authentication tests
+npx mcpvals eval mcp-eval.config.ts --oauth-only
+
 # Run with LLM judge and save report
 npx mcpvals eval mcp-eval.config.ts --llm-judge --reporter json > report.json
 ```
@@ -155,6 +187,8 @@ MCPVals provides comprehensive testing for all MCP specification primitives:
 4.  **Sampling Evaluation**: Tests MCP sampling capabilities (server-initiated LLM requests) including capability negotiation, human-in-the-loop workflows, model preferences, and security controls.
 
 5.  **Workflow Evaluation**: Uses a large language model (LLM) to interpret natural language prompts and execute a series of tool calls to achieve a goal. This tests the integration of your MCP primitives from an LLM's perspective.
+
+6.  **OAuth 2.1 Testing**: Comprehensive OAuth 2.1 authentication flow testing with PKCE, resource indicators (RFC 8707), multi-tenant support, and security validation. Tests authorization code flows, client credentials, device flows, token management, and security controls.
 
 ---
 
@@ -188,6 +222,7 @@ Evaluation options:
   --resources-only         Run only resource evaluation tests, skip others
   --prompts-only           Run only prompt evaluation tests, skip others
   --sampling-only          Run only sampling evaluation tests, skip others
+  --oauth-only             Run only OAuth 2.1 authentication tests, skip others
   --workflows-only         Run only workflows, skip other test types
 ```
 
@@ -430,7 +465,122 @@ An array of suites for testing MCP sampling capabilities. Each suite contains:
 }
 ```
 
-### 4.6 `workflows[]`
+### 4.6 `oauth2Suites[]`
+
+An array of suites for testing OAuth 2.1 authentication flows. Each suite contains comprehensive tests for modern OAuth 2.1 security practices including PKCE, resource indicators, and multi-tenant support.
+
+- `name`: Identifier for the OAuth test suite.
+- `description`: Optional description of the test suite purpose.
+- `authorizationCodeTests`: Authorization code flow tests with PKCE.
+- `clientCredentialsTests`: Machine-to-machine authentication tests.
+- `deviceCodeTests`: Device authorization flow tests for input-limited devices.
+- `tokenManagementTests`: Token refresh, revocation, and expiration tests.
+- `pkceValidationTests`: PKCE (Proof Key for Code Exchange) security validation.
+- `resourceIndicatorTests`: RFC 8707 resource indicators for audience restriction.
+- `multiTenantTests`: Multi-tenant isolation and access control tests.
+- `parallel`: (boolean) Whether to run tests in parallel (default: `false`).
+- `timeout`: (number) Override the global timeout for this suite.
+
+#### OAuth 2.1 Test Types
+
+**Authorization Code Flow Tests**: Complete OAuth 2.1 authorization code flow with PKCE
+
+```typescript
+{
+  name: "Authorization Code with PKCE",
+  flow: "authorization_code",
+  server: {
+    authorizationEndpoint: "https://auth.example.com/authorize",
+    tokenEndpoint: "https://auth.example.com/token",
+    supportedGrantTypes: ["authorization_code"],
+    supportedScopes: ["read", "write"],
+    pkceRequired: true
+  },
+  client: {
+    clientId: "test-client-id",
+    responseType: "code",
+    scope: ["read", "write"],
+    redirectUri: "https://app.example.com/callback",
+    pkce: {
+      enabled: true,
+      codeChallengeMethod: "S256"
+    }
+  },
+  simulateUserConsent: true,
+  expectedResult: "success",
+  securityChecks: {
+    validatePKCE: true,
+    validateState: true,
+    checkTokenExpiration: true
+  }
+}
+```
+
+**Token Management Tests**: Refresh, revocation, and expiration validation
+
+```typescript
+{
+  name: "Token Refresh Test",
+  testType: "refresh",
+  token: {
+    accessToken: "your-jwt-token-here",
+    refreshToken: "refresh-token-example",
+    tokenType: "Bearer",
+    expiresIn: 3600,
+    scope: ["read", "write"]
+  },
+  expectedResult: "success",
+  validateTokenClaims: true
+}
+```
+
+**PKCE Validation Tests**: Security validation for Proof Key for Code Exchange
+
+```typescript
+{
+  name: "Valid PKCE S256 Challenge",
+  codeChallengeMethod: "S256",
+  invalidChallenge: false,
+  expectedResult: "success",
+  securityLevel: "high"
+}
+```
+
+**Resource Indicator Tests**: RFC 8707 audience restriction validation
+
+```typescript
+{
+  name: "Resource-Specific Token",
+  resourceUri: "https://api.example.com",
+  requestedScopes: ["api:read", "api:write"],
+  expectedAudience: "https://api.example.com",
+  validateAudienceRestriction: true,
+  expectedResult: "success"
+}
+```
+
+**Multi-Tenant Tests**: Tenant isolation and cross-tenant access control
+
+```typescript
+{
+  name: "Cross-Tenant Access Blocked",
+  primaryTenant: {
+    tenantId: "tenant-123",
+    isolationLevel: "strict",
+    crossTenantAccess: false
+  },
+  secondaryTenant: {
+    tenantId: "tenant-456",
+    isolationLevel: "strict",
+    crossTenantAccess: false
+  },
+  testScenario: "cross_tenant_blocked",
+  expectedResult: "success",
+  validateTenantIsolation: true
+}
+```
+
+### 4.7 `workflows[]`
 
 An array of LLM-driven test workflows. Each workflow contains:
 
@@ -450,7 +600,7 @@ An array of LLM-driven test workflows. Each workflow contains:
 1.  **Write natural prompts**: Instead of micro-managing tool calls, give the LLM a complete task (e.g., "Book a flight from SF to NY for next Tuesday and then find a hotel near the airport.").
 2.  **Use workflow-level `expectTools`**: List all tools you expect to be used across the entire workflow to verify the LLM's plan.
 
-### 4.7 Global Options
+### 4.8 Global Options
 
 - `timeout`: (number) Global timeout in ms for server startup and individual tool calls. Default: `30000`.
 - `llmJudge`: (boolean) Enables the LLM Judge feature. Default: `false`.
@@ -501,7 +651,19 @@ For sampling tests, the following is assessed:
 - **Performance Metrics**: Concurrent request handling, rate limiting, latency management
 - **Content Metrics**: Text/image/mixed content validation, format handling
 
-### 5.5 Workflow Metrics (Deterministic)
+### 5.5 OAuth 2.1 Evaluation Metrics
+
+For OAuth 2.1 authentication tests, the following is assessed:
+
+- **Flow Completion Metrics**: Successful completion of authorization code, client credentials, and device code flows
+- **PKCE Security Metrics**: Code challenge/verifier validation, S256 method enforcement, replay attack prevention
+- **Token Management Metrics**: Token refresh success, revocation effectiveness, expiration validation
+- **Security Validation Metrics**: State parameter validation, nonce verification, audience restriction compliance
+- **Multi-Tenant Metrics**: Tenant isolation enforcement, cross-tenant access blocking, tenant switching validation
+- **Resource Indicator Metrics**: RFC 8707 compliance, audience restriction, scope validation
+- **Performance Metrics**: Token endpoint latency, authorization flow completion time, concurrent request handling
+
+### 5.6 Workflow Metrics (Deterministic)
 
 For each workflow, a trace of the LLM interaction is recorded and evaluated against 3 metrics:
 
@@ -513,7 +675,7 @@ For each workflow, a trace of the LLM interaction is recorded and evaluated agai
 
 The overall score is an arithmetic mean. The **evaluation fails** if _any_ metric fails.
 
-### 5.6 LLM Judge (Optional)
+### 5.7 LLM Judge (Optional)
 
 Add subjective grading when deterministic checks are not enough (e.g., checking tone, or conversational quality).
 
@@ -552,6 +714,7 @@ The library exports all configuration and result types for use in TypeScript pro
 - `ResourceSuite`, `ResourceTest`, `ResourceDiscoveryTest`, `ResourceTemplateTest`, `ResourceSubscriptionTest`
 - `PromptSuite`, `PromptTest`, `PromptArgumentTest`, `PromptTemplateTest`, `PromptSecurityTest`
 - `SamplingSuite`, `SamplingCapabilityTest`, `SamplingRequestTest`, `SamplingSecurityTest`, `SamplingPerformanceTest`, `SamplingContentTest`, `SamplingWorkflowTest`
+- `OAuth2TestSuite`, `AuthorizationCodeTest`, `ClientCredentialsTest`, `DeviceCodeTest`, `TokenManagementTest`, `PKCEValidationTest`, `ResourceIndicatorTest`, `MultiTenantTest`
 
 **Result Types:**
 
@@ -560,6 +723,7 @@ The library exports all configuration and result types for use in TypeScript pro
 - `ResourceSuiteResult`, `ResourceDiscoveryResult`, `ResourceTestResult`, `ResourceTemplateResult`, `ResourceSubscriptionResult`
 - `PromptSuiteResult`, `PromptDiscoveryResult`, `PromptTestResult`, `PromptArgumentResult`, `PromptTemplateResult`, `PromptSecurityResult`
 - `SamplingSuiteResult`, `SamplingCapabilityResult`, `SamplingRequestResult`, `SamplingSecurityResult`, `SamplingPerformanceResult`, `SamplingContentResult`, `SamplingWorkflowResult`
+- `OAuth2SuiteResult`, `OAuth2TestResult`, `TokenManager`, `PKCEUtils`, `SecurityUtils`
 - `runLlmJudge`, `LlmJudgeResult`
 
 ---
@@ -580,13 +744,14 @@ The library exports all configuration and result types for use in TypeScript pro
 - [x] Resource evaluation with discovery, access, templates, and subscriptions
 - [x] Prompt evaluation with execution, arguments, templates, and security testing
 - [x] Sampling evaluation with capability, requests, security, and performance testing
+- [x] OAuth 2.1 authentication testing with PKCE, resource indicators, and multi-tenant support
 - [x] Comprehensive security validation framework
 - [x] Enhanced console reporting for all evaluation types
 
 **🚧 In Progress:**
 
 - [ ] JUnit XML reporter for CI integration
-- [ ] Advanced security testing (OAuth 2.1, Resource Indicators RFC 8707)
+- [ ] Advanced security testing extensions
 - [ ] Performance benchmarking and comparison tools
 
 **📋 Planned (v0.2.0):**
@@ -691,6 +856,48 @@ export default {
           ],
           expectUserApproval: true,
           simulateUserResponse: "approve",
+        },
+      ],
+    },
+  ],
+
+  // Test OAuth 2.1 authentication
+  oauth2Suites: [
+    {
+      name: "OAuth 2.1 Security Testing",
+      authorizationCodeTests: [
+        {
+          name: "Authorization Code with PKCE",
+          flow: "authorization_code",
+          server: {
+            authorizationEndpoint: "https://auth.example.com/authorize",
+            tokenEndpoint: "https://auth.example.com/token",
+            supportedGrantTypes: ["authorization_code"],
+            supportedScopes: ["read", "write"],
+            pkceRequired: true,
+          },
+          client: {
+            clientId: "test-client-id",
+            responseType: "code",
+            scope: ["read", "write"],
+            redirectUri: "https://app.example.com/callback",
+            pkce: { enabled: true, codeChallengeMethod: "S256" },
+          },
+          simulateUserConsent: true,
+          expectedResult: "success",
+        },
+      ],
+      tokenManagementTests: [
+        {
+          name: "Token Refresh",
+          testType: "refresh",
+          token: {
+            accessToken: "your-jwt-token-here",
+            refreshToken: "refresh-token-example",
+            tokenType: "Bearer",
+            expiresIn: 3600,
+          },
+          expectedResult: "success",
         },
       ],
     },

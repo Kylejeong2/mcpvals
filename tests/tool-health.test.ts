@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
 import { ToolTester } from "../src/eval/tool-health";
 import { ServerRunner } from "../src/eval/runner";
-import { ToolTest, ToolHealthSuite } from "../src/eval/config";
+import { ToolTest, ToolHealthSuite, createToolName } from "../src/eval/config";
 
 // Mock ServerRunner
 vi.mock("../src/eval/runner");
@@ -25,7 +25,7 @@ describe("ToolTester", () => {
   describe("runToolTest", () => {
     it("should pass when tool call succeeds", async () => {
       const test: ToolTest = {
-        name: "add",
+        name: createToolName("add"),
         description: "Test addition",
         args: { a: 2, b: 3 },
         expectedResult: 5,
@@ -47,7 +47,7 @@ describe("ToolTester", () => {
 
     it("should use tool name as test name when description is missing", async () => {
       const test: ToolTest = {
-        name: "multiply",
+        name: createToolName("multiply"),
         args: { a: 4, b: 5 },
         expectedResult: 20,
         retries: 0,
@@ -62,7 +62,7 @@ describe("ToolTester", () => {
 
     it("should fail when expected result doesn't match", async () => {
       const test: ToolTest = {
-        name: "add",
+        name: createToolName("add"),
         args: { a: 2, b: 3 },
         expectedResult: 6, // Wrong expected result
         retries: 0,
@@ -83,7 +83,7 @@ describe("ToolTester", () => {
 
     it("should pass when no expected result is specified", async () => {
       const test: ToolTest = {
-        name: "log",
+        name: createToolName("log"),
         args: { message: "test" },
         retries: 0,
         // No expectedResult
@@ -99,7 +99,7 @@ describe("ToolTester", () => {
 
     it("should fail when maxLatency is exceeded", async () => {
       const test: ToolTest = {
-        name: "slow_operation",
+        name: createToolName("slow_operation"),
         args: { delay: 100 },
         maxLatency: 50,
         retries: 0,
@@ -120,7 +120,7 @@ describe("ToolTester", () => {
 
     it("should pass when expected error occurs", async () => {
       const test: ToolTest = {
-        name: "divide",
+        name: createToolName("divide"),
         args: { a: 10, b: 0 },
         expectedError: "Division by zero",
         retries: 0,
@@ -142,7 +142,7 @@ describe("ToolTester", () => {
 
     it("should fail when expected error doesn't occur", async () => {
       const test: ToolTest = {
-        name: "divide",
+        name: createToolName("divide"),
         args: { a: 10, b: 2 },
         expectedError: "Division by zero",
         retries: 0,
@@ -160,7 +160,7 @@ describe("ToolTester", () => {
 
     it("should fail when unexpected error occurs", async () => {
       const test: ToolTest = {
-        name: "add",
+        name: createToolName("add"),
         args: { a: 2, b: 3 },
         expectedResult: 5,
         retries: 0,
@@ -178,7 +178,7 @@ describe("ToolTester", () => {
 
     it("should handle timeout", async () => {
       const test: ToolTest = {
-        name: "timeout_test",
+        name: createToolName("timeout_test"),
         args: { delay: 1000 },
         retries: 0,
       };
@@ -197,7 +197,7 @@ describe("ToolTester", () => {
 
     it("should retry on failure", async () => {
       const test: ToolTest = {
-        name: "flaky_tool",
+        name: createToolName("flaky_tool"),
         args: { attempt: 1 },
         retries: 2,
       };
@@ -218,7 +218,7 @@ describe("ToolTester", () => {
 
     it("should fail after exhausting retries", async () => {
       const test: ToolTest = {
-        name: "always_fails",
+        name: createToolName("always_fails"),
         args: { test: true },
         retries: 2,
       };
@@ -236,7 +236,7 @@ describe("ToolTester", () => {
 
     it("should handle complex result validation", async () => {
       const test: ToolTest = {
-        name: "complex_operation",
+        name: createToolName("complex_operation"),
         args: { operation: "analyze" },
         expectedResult: {
           status: "success",
@@ -258,7 +258,7 @@ describe("ToolTester", () => {
 
     it("should handle string contains validation", async () => {
       const test: ToolTest = {
-        name: "format_text",
+        name: createToolName("format_text"),
         args: { text: "hello world" },
         expectedResult: "HELLO",
         retries: 0,
@@ -274,7 +274,7 @@ describe("ToolTester", () => {
 
     it("should record latency correctly", async () => {
       const test: ToolTest = {
-        name: "timed_operation",
+        name: createToolName("timed_operation"),
         args: { delay: 50 },
         retries: 0,
       };
@@ -297,9 +297,14 @@ describe("ToolTester", () => {
         name: "sequential-tests",
         parallel: false,
         tests: [
-          { name: "add", args: { a: 1, b: 2 }, expectedResult: 3, retries: 0 },
           {
-            name: "multiply",
+            name: createToolName("add"),
+            args: { a: 1, b: 2 },
+            expectedResult: 3,
+            retries: 0,
+          },
+          {
+            name: createToolName("multiply"),
             args: { a: 2, b: 3 },
             expectedResult: 6,
             retries: 0,
@@ -325,9 +330,14 @@ describe("ToolTester", () => {
         name: "parallel-tests",
         parallel: true,
         tests: [
-          { name: "add", args: { a: 1, b: 2 }, expectedResult: 3, retries: 0 },
           {
-            name: "multiply",
+            name: createToolName("add"),
+            args: { a: 1, b: 2 },
+            expectedResult: 3,
+            retries: 0,
+          },
+          {
+            name: createToolName("multiply"),
             args: { a: 2, b: 3 },
             expectedResult: 6,
             retries: 0,
@@ -350,15 +360,20 @@ describe("ToolTester", () => {
         name: "mixed-results",
         parallel: false,
         tests: [
-          { name: "add", args: { a: 1, b: 2 }, expectedResult: 3, retries: 0 },
           {
-            name: "subtract",
+            name: createToolName("add"),
+            args: { a: 1, b: 2 },
+            expectedResult: 3,
+            retries: 0,
+          },
+          {
+            name: createToolName("subtract"),
             args: { a: 5, b: 3 },
             expectedResult: 2,
             retries: 0,
           },
           {
-            name: "multiply",
+            name: createToolName("multiply"),
             args: { a: 2, b: 3 },
             expectedResult: 7,
             retries: 0,
@@ -385,8 +400,8 @@ describe("ToolTester", () => {
         name: "latency-test",
         parallel: false,
         tests: [
-          { name: "fast", args: {}, retries: 0 },
-          { name: "slow", args: {}, retries: 0 },
+          { name: createToolName("fast"), args: {}, retries: 0 },
+          { name: createToolName("slow"), args: {}, retries: 0 },
         ],
       };
 
@@ -410,7 +425,13 @@ describe("ToolTester", () => {
         name: "timeout-override",
         parallel: false,
         timeout: 100,
-        tests: [{ name: "slow_operation", args: { delay: 200 }, retries: 0 }],
+        tests: [
+          {
+            name: createToolName("slow_operation"),
+            args: { delay: 200 },
+            retries: 0,
+          },
+        ],
       };
 
       mockRunner.callTool.mockImplementation(
@@ -446,7 +467,7 @@ describe("ToolTester", () => {
         name: "described-suite",
         parallel: false,
         description: "A test suite with description",
-        tests: [{ name: "test1", args: {}, retries: 0 }],
+        tests: [{ name: createToolName("test1"), args: {}, retries: 0 }],
       };
 
       mockRunner.callTool.mockResolvedValueOnce("result");
@@ -485,8 +506,12 @@ describe("ToolTester", () => {
         name: "validation-test",
         parallel: false,
         tests: [
-          { name: "add", args: { a: 1, b: 2 }, retries: 0 },
-          { name: "multiply", args: { a: 2, b: 3 }, retries: 0 },
+          { name: createToolName("add"), args: { a: 1, b: 2 }, retries: 0 },
+          {
+            name: createToolName("multiply"),
+            args: { a: 2, b: 3 },
+            retries: 0,
+          },
         ],
       };
 
@@ -508,9 +533,13 @@ describe("ToolTester", () => {
         name: "invalid-suite",
         parallel: false,
         tests: [
-          { name: "add", args: { a: 1, b: 2 }, retries: 0 },
-          { name: "subtract", args: { a: 5, b: 3 }, retries: 0 },
-          { name: "nonexistent", args: {}, retries: 0 },
+          { name: createToolName("add"), args: { a: 1, b: 2 }, retries: 0 },
+          {
+            name: createToolName("subtract"),
+            args: { a: 5, b: 3 },
+            retries: 0,
+          },
+          { name: createToolName("nonexistent"), args: {}, retries: 0 },
         ],
       };
 
@@ -531,8 +560,8 @@ describe("ToolTester", () => {
         name: "duplicate-test",
         parallel: false,
         tests: [
-          { name: "add", args: { a: 1, b: 2 }, retries: 0 },
-          { name: "add", args: { a: 3, b: 4 }, retries: 0 }, // Duplicate
+          { name: createToolName("add"), args: { a: 1, b: 2 }, retries: 0 },
+          { name: createToolName("add"), args: { a: 3, b: 4 }, retries: 0 }, // Duplicate
         ],
       };
 

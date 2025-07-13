@@ -33,9 +33,9 @@ vi.mock("ai", () => ({
 describe("Integration Tests", () => {
   let tempDir: string;
   let configPath: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockClient: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockExeca: any;
 
   beforeEach(async () => {
@@ -75,26 +75,26 @@ describe("Integration Tests", () => {
     const anthropicModule = await import("@ai-sdk/anthropic");
 
     vi.mocked(clientModule.Client).mockImplementation(() => mockClient);
-    // @ts-expect-error - Simplified mock implementation for tests
-    vi.mocked(stdioModule.StdioClientTransport).mockImplementation(() => ({}));
-    // @ts-expect-error - Simplified mock implementation for tests
+    vi.mocked(stdioModule.StdioClientTransport).mockImplementation(
+      () => ({}) as any,
+    );
     vi.mocked(
       streamableHttpModule.StreamableHTTPClientTransport,
-    ).mockImplementation(() => ({}));
+    ).mockImplementation(() => ({}) as any);
     vi.mocked(execaModule.execa).mockImplementation(mockExeca);
 
-    // Set up AI SDK mocks properly
-    // @ts-expect-error - Simplified mock implementation for tests
-    vi.mocked(anthropicModule.createAnthropic).mockReturnValue(() => ({
+    // Set up AI SDK mocks properly - createAnthropic should return a function
+    vi.mocked(anthropicModule.createAnthropic).mockReturnValue(((
+      modelId: string,
+    ) => ({
       specificationVersion: "v1",
       provider: "anthropic",
-      modelId: "claude-3-5-sonnet-20241022",
+      modelId,
       defaultObjectGenerationMode: "json",
       maxTokens: 4096,
-      // Stub required methods for LanguageModelV1
       doGenerate: vi.fn(),
       doStream: vi.fn(),
-    }));
+    })) as any);
 
     // Mock the tool function to return a proper tool object
     vi.mocked(aiModule.tool).mockImplementation(
@@ -106,15 +106,8 @@ describe("Integration Tests", () => {
     );
 
     // Mock generateText to simulate proper LLM tool calling behavior
-    // @ts-expect-error - Simplified mock implementation for tests
-    vi.mocked(aiModule.generateText).mockImplementation(
-      async (config: {
-        messages: { content: string }[];
-        tools?: Record<
-          string,
-          { execute: (args: Record<string, unknown>) => Promise<unknown> }
-        >;
-      }) => {
+    (vi.mocked(aiModule.generateText) as any).mockImplementation(
+      async (config: any) => {
         const userMessage =
           config.messages?.[config.messages.length - 1]?.content || "";
 
@@ -149,7 +142,7 @@ describe("Integration Tests", () => {
             toolCalls: [
               { toolCallId: "1", toolName: "add", args: { a: 5, b: 3 } },
             ],
-            toolResults: [{ toolCallId: "1", result: toolResult }],
+            toolResults: [toolResult],
           };
         }
 
@@ -167,7 +160,7 @@ describe("Integration Tests", () => {
             toolCalls: [
               { toolCallId: "2", toolName: "multiply", args: { a: 8, b: 2 } },
             ],
-            toolResults: [{ toolCallId: "2", result: toolResult }],
+            toolResults: [toolResult],
           };
         }
 
@@ -281,7 +274,6 @@ describe("Integration Tests", () => {
     delete process.env.ANTHROPIC_API_KEY;
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function createTestConfig(overrides: any = {}) {
     const config = {
       server: {

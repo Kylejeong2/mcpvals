@@ -7,6 +7,7 @@ import {
   ResourceTemplateTest,
   ResourceSubscriptionTest,
   ResourceSuite,
+  createResourceUri,
 } from "../src/eval/config";
 
 // Mock ServerRunner
@@ -187,7 +188,7 @@ describe("ResourceEvaluator", () => {
       const test: ResourceTest = {
         name: "read-test",
         description: "Test reading a resource",
-        uri: "file://test.txt",
+        uri: createResourceUri("file://test.txt"),
         expectedContent: "Hello World",
         retries: 0,
       };
@@ -195,7 +196,7 @@ describe("ResourceEvaluator", () => {
       mockRunner.readResource.mockResolvedValueOnce({
         contents: [
           {
-            uri: "file://test.txt",
+            uri: createResourceUri("file://test.txt"),
             mimeType: "text/plain",
             text: "Hello World Test",
           },
@@ -215,7 +216,7 @@ describe("ResourceEvaluator", () => {
     it("should fail when content doesn't match", async () => {
       const test: ResourceTest = {
         name: "content-mismatch",
-        uri: "file://test.txt",
+        uri: createResourceUri("file://test.txt"),
         expectedContent: "Expected Text",
         retries: 0,
       };
@@ -223,7 +224,7 @@ describe("ResourceEvaluator", () => {
       mockRunner.readResource.mockResolvedValueOnce({
         contents: [
           {
-            uri: "file://test.txt",
+            uri: createResourceUri("file://test.txt"),
             text: "Different Text",
           },
         ],
@@ -240,7 +241,7 @@ describe("ResourceEvaluator", () => {
     it("should validate MIME type", async () => {
       const test: ResourceTest = {
         name: "mime-type-test",
-        uri: "file://config.json",
+        uri: createResourceUri("file://config.json"),
         expectedMimeType: "application/json",
         retries: 0,
       };
@@ -248,7 +249,7 @@ describe("ResourceEvaluator", () => {
       mockRunner.readResource.mockResolvedValueOnce({
         contents: [
           {
-            uri: "file://config.json",
+            uri: createResourceUri("file://config.json"),
             mimeType: "application/json",
             text: '{"test": true}',
           },
@@ -264,7 +265,7 @@ describe("ResourceEvaluator", () => {
     it("should fail when MIME type doesn't match", async () => {
       const test: ResourceTest = {
         name: "mime-type-mismatch",
-        uri: "file://config.json",
+        uri: createResourceUri("file://config.json"),
         expectedMimeType: "application/json",
         retries: 0,
       };
@@ -272,7 +273,7 @@ describe("ResourceEvaluator", () => {
       mockRunner.readResource.mockResolvedValueOnce({
         contents: [
           {
-            uri: "file://config.json",
+            uri: createResourceUri("file://config.json"),
             mimeType: "text/plain",
             text: '{"test": true}',
           },
@@ -291,7 +292,7 @@ describe("ResourceEvaluator", () => {
     it("should respect latency constraints", async () => {
       const test: ResourceTest = {
         name: "latency-test",
-        uri: "file://slow.txt",
+        uri: createResourceUri("file://slow.txt"),
         maxLatency: 50,
         retries: 0,
       };
@@ -320,7 +321,7 @@ describe("ResourceEvaluator", () => {
     it("should handle expected errors", async () => {
       const test: ResourceTest = {
         name: "error-test",
-        uri: "file://nonexistent.txt",
+        uri: createResourceUri("file://nonexistent.txt"),
         expectError: "File not found",
         retries: 0,
       };
@@ -339,7 +340,7 @@ describe("ResourceEvaluator", () => {
     it("should fail when expected error doesn't occur", async () => {
       const test: ResourceTest = {
         name: "missing-error",
-        uri: "file://test.txt",
+        uri: createResourceUri("file://test.txt"),
         expectError: "Permission denied",
         retries: 0,
       };
@@ -360,7 +361,7 @@ describe("ResourceEvaluator", () => {
     it("should retry on failure", async () => {
       const test: ResourceTest = {
         name: "retry-test",
-        uri: "file://flaky.txt",
+        uri: createResourceUri("file://flaky.txt"),
         retries: 2,
       };
 
@@ -382,7 +383,7 @@ describe("ResourceEvaluator", () => {
     it("should fail after exhausting retries", async () => {
       const test: ResourceTest = {
         name: "persistent-failure",
-        uri: "file://broken.txt",
+        uri: createResourceUri("file://broken.txt"),
         retries: 1,
       };
 
@@ -607,7 +608,7 @@ describe("ResourceEvaluator", () => {
         resourceTests: [
           {
             name: "read-test",
-            uri: "file://test.txt",
+            uri: createResourceUri("file://test.txt"),
             retries: 0,
           },
         ],
@@ -668,18 +669,21 @@ describe("ResourceEvaluator", () => {
       const suite: ResourceSuite = {
         name: "parallel-suite",
         parallel: true,
+        discoveryTests: [],
         resourceTests: [
           {
             name: "test1",
-            uri: "file://test1.txt",
+            uri: createResourceUri("file://test1.txt"),
             retries: 0,
           },
           {
             name: "test2",
-            uri: "file://test2.txt",
+            uri: createResourceUri("file://test2.txt"),
             retries: 0,
           },
         ],
+        templateTests: [],
+        subscriptionTests: [],
       };
 
       mockRunner.readResource
@@ -701,24 +705,27 @@ describe("ResourceEvaluator", () => {
       const suite: ResourceSuite = {
         name: "mixed-results",
         parallel: false,
+        discoveryTests: [],
         resourceTests: [
           {
             name: "passing-test",
-            uri: "file://good.txt",
+            uri: createResourceUri("file://good.txt"),
             retries: 0,
           },
           {
             name: "failing-test",
-            uri: "file://bad.txt",
+            uri: createResourceUri("file://bad.txt"),
             expectError: "Not found", // This should pass
             retries: 0,
           },
           {
             name: "unexpected-failure",
-            uri: "file://broken.txt",
+            uri: createResourceUri("file://broken.txt"),
             retries: 0,
           },
         ],
+        templateTests: [],
+        subscriptionTests: [],
       };
 
       mockRunner.readResource
@@ -741,6 +748,10 @@ describe("ResourceEvaluator", () => {
       const suite: ResourceSuite = {
         name: "empty-suite",
         parallel: false,
+        discoveryTests: [],
+        resourceTests: [],
+        templateTests: [],
+        subscriptionTests: [],
       };
 
       const result = await resourceEvaluator.runResourceSuite(suite);
@@ -797,9 +808,19 @@ describe("ResourceEvaluator", () => {
     it("should validate that all test resources are available", async () => {
       const suite: ResourceSuite = {
         name: "validation-test",
+        parallel: false,
+        discoveryTests: [],
         resourceTests: [
-          { name: "test1", uri: "file://available.txt", retries: 0 },
-          { name: "test2", uri: "file://also-available.json", retries: 0 },
+          {
+            name: "test1",
+            uri: createResourceUri("file://available.txt"),
+            retries: 0,
+          },
+          {
+            name: "test2",
+            uri: createResourceUri("file://also-available.json"),
+            retries: 0,
+          },
         ],
         templateTests: [
           {
@@ -809,6 +830,7 @@ describe("ResourceEvaluator", () => {
             retries: 0,
           },
         ],
+        subscriptionTests: [],
       };
 
       mockRunner.listResources.mockResolvedValueOnce({
@@ -839,9 +861,19 @@ describe("ResourceEvaluator", () => {
     it("should detect missing resources and templates", async () => {
       const suite: ResourceSuite = {
         name: "invalid-suite",
+        parallel: false,
+        discoveryTests: [],
         resourceTests: [
-          { name: "test1", uri: "file://missing.txt", retries: 0 },
-          { name: "test2", uri: "file://available.txt", retries: 0 },
+          {
+            name: "test1",
+            uri: createResourceUri("file://missing.txt"),
+            retries: 0,
+          },
+          {
+            name: "test2",
+            uri: createResourceUri("file://available.txt"),
+            retries: 0,
+          },
         ],
         templateTests: [
           {
@@ -851,6 +883,7 @@ describe("ResourceEvaluator", () => {
             retries: 0,
           },
         ],
+        subscriptionTests: [],
       };
 
       mockRunner.listResources.mockResolvedValueOnce({
@@ -874,6 +907,9 @@ describe("ResourceEvaluator", () => {
       // Test the private method through a public method that uses it
       const suite: ResourceSuite = {
         name: "template-instantiation",
+        parallel: false,
+        discoveryTests: [],
+        resourceTests: [],
         templateTests: [
           {
             name: "simple-template",
@@ -882,6 +918,7 @@ describe("ResourceEvaluator", () => {
             retries: 0,
           },
         ],
+        subscriptionTests: [],
       };
 
       // We can't directly test the private method, but we can verify it works
@@ -1018,7 +1055,7 @@ describe("ResourceEvaluator", () => {
     it("should validate text content with contains logic", async () => {
       const test: ResourceTest = {
         name: "content-validation",
-        uri: "file://test.txt",
+        uri: createResourceUri("file://test.txt"),
         expectedContent: "Hello",
         retries: 0,
       };
@@ -1026,7 +1063,7 @@ describe("ResourceEvaluator", () => {
       mockRunner.readResource.mockResolvedValueOnce({
         contents: [
           {
-            uri: "file://test.txt",
+            uri: createResourceUri("file://test.txt"),
             text: "Hello World, this is a test!",
           },
         ],
@@ -1041,7 +1078,7 @@ describe("ResourceEvaluator", () => {
     it("should validate blob content with exact match", async () => {
       const test: ResourceTest = {
         name: "blob-validation",
-        uri: "file://image.png",
+        uri: createResourceUri("file://image.png"),
         expectedContent: "base64encodeddata",
         retries: 0,
       };
@@ -1049,7 +1086,7 @@ describe("ResourceEvaluator", () => {
       mockRunner.readResource.mockResolvedValueOnce({
         contents: [
           {
-            uri: "file://image.png",
+            uri: createResourceUri("file://image.png"),
             blob: "base64encodeddata",
             mimeType: "image/png",
           },

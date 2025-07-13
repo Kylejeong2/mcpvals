@@ -898,6 +898,10 @@ Focus on completing the tasks accurately and efficiently.`;
           for (let i = 0; i < result.toolCalls.length; i++) {
             const toolCall = result.toolCalls[i];
             const toolResult = result.toolResults[i];
+
+            // NOTE: Tool calls are already recorded in TraceStore by the callTool method
+            // when the AI tools execute, so we don't need to record them again here
+
             stepToolCalls.push({
               name: toolCall.toolName,
               args: toolCall.args,
@@ -908,10 +912,41 @@ Focus on completing the tasks accurately and efficiently.`;
         }
 
         messages.push({ role: "assistant", content: finalText });
+
+        // Record the conversation messages in trace store for evaluation
+        this.traceStore.addMessage({
+          role: "user",
+          content: step.user,
+          timestamp: new Date(),
+        });
+        this.traceStore.addMessage({
+          role: "assistant",
+          content: finalText,
+          toolCalls: stepToolCalls.map((tc) => ({
+            id: `call_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+            name: tc.name,
+            arguments: tc.args,
+            timestamp: new Date(),
+          })),
+          timestamp: new Date(),
+        });
+
         toolCalls.push(...stepToolCalls);
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         messages.push({ role: "assistant", content: `Error: ${errorMsg}` });
+
+        // Record the conversation messages in trace store for error case
+        this.traceStore.addMessage({
+          role: "user",
+          content: step.user,
+          timestamp: new Date(),
+        });
+        this.traceStore.addMessage({
+          role: "assistant",
+          content: `Error: ${errorMsg}`,
+          timestamp: new Date(),
+        });
 
         toolCalls.push({
           name: "error",
