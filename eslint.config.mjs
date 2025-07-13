@@ -14,18 +14,18 @@ export default [
       "**/*.json",
       "**/*.yml",
       "**/*.yaml",
-      "**/*.md"
-    ]
+      "**/*.md",
+    ],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,tsx}"],
-    languageOptions: { 
-      globals: { 
-        ...globals.browser, 
-        ...globals.node 
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
       },
       ecmaVersion: 2022,
-      sourceType: "module"
+      sourceType: "module",
     },
   },
   {

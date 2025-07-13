@@ -131,6 +131,14 @@ export const ServerSchema = z.discriminatedUnion("transport", [
     url: z.string().url(),
     headers: z.record(z.string()).optional(),
   }),
+  z.object({
+    transport: z.literal("sse"),
+    url: z.string().url(),
+    headers: z.record(z.string()).optional(),
+    reconnect: z.boolean().default(true),
+    reconnectInterval: z.number().min(100).default(5000),
+    maxReconnectAttempts: z.number().min(0).default(10),
+  }),
 ]);
 
 // Resource test schemas

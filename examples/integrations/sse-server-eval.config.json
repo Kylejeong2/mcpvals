@@ -1,0 +1,87 @@
+{
+  "server": {
+    "transport": "sse",
+    "url": "https://example.com/mcp/sse",
+    "headers": {
+      "Accept": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "User-Agent": "MCPVals/1.0"
+    },
+    "reconnect": true,
+    "reconnectInterval": 5000,
+    "maxReconnectAttempts": 10
+  },
+
+  "toolHealthSuites": [
+    {
+      "name": "SSE Tool Health Tests",
+      "description": "Basic tool health testing over SSE transport",
+      "tests": [
+        {
+          "name": "ping",
+          "args": {},
+          "expectedResult": "pong",
+          "maxLatency": 2000
+        },
+        {
+          "name": "echo",
+          "args": { "message": "Hello SSE!" },
+          "expectedResult": "Hello SSE!",
+          "maxLatency": 1000
+        }
+      ]
+    }
+  ],
+
+  "resourceSuites": [
+    {
+      "name": "SSE Resource Tests",
+      "description": "Resource access testing over SSE transport",
+      "discoveryTests": [
+        {
+          "name": "list-resources",
+          "expectedCount": { "min": 1 }
+        }
+      ],
+      "resourceTests": [
+        {
+          "name": "config-resource",
+          "uri": "config://app.json",
+          "expectedMimeType": "application/json",
+          "maxLatency": 1500
+        }
+      ]
+    }
+  ],
+
+  "promptSuites": [
+    {
+      "name": "SSE Prompt Tests",
+      "description": "Prompt evaluation over SSE transport",
+      "promptTests": [
+        {
+          "name": "greeting",
+          "args": { "name": "World" },
+          "expectedContent": ["Hello", "World"]
+        }
+      ]
+    }
+  ],
+
+  "workflows": [
+    {
+      "name": "SSE Multi-step Workflow",
+      "description": "Test LLM-driven workflow over SSE connection",
+      "steps": [
+        {
+          "user": "Get the current configuration and display a greeting message",
+          "expectedState": "greeting displayed"
+        }
+      ],
+      "expectTools": ["get-config", "display-message"]
+    }
+  ],
+
+  "timeout": 30000,
+  "llmJudge": false
+}

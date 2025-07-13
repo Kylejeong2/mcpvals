@@ -33,6 +33,87 @@ describe("Config Schema Validation", () => {
     expect(result.success).toBe(true);
   });
 
+  it("should validate SSE server config", () => {
+    const config = {
+      server: {
+        transport: "sse",
+        url: "https://example.com/mcp/sse",
+        headers: {
+          Accept: "text/event-stream",
+          "Cache-Control": "no-cache",
+        },
+        reconnect: true,
+        reconnectInterval: 5000,
+        maxReconnectAttempts: 10,
+      },
+      workflows: [],
+    };
+
+    const result = ConfigSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("should validate SSE server config with defaults", () => {
+    const config = {
+      server: {
+        transport: "sse",
+        url: "https://example.com/mcp/sse",
+      },
+      workflows: [],
+    };
+
+    const result = ConfigSchema.safeParse(config);
+    expect(result.success).toBe(true);
+
+    if (result.success && result.data.server.transport === "sse") {
+      expect(result.data.server.reconnect).toBe(true);
+      expect(result.data.server.reconnectInterval).toBe(5000);
+      expect(result.data.server.maxReconnectAttempts).toBe(10);
+    }
+  });
+
+  it("should reject SSE config with invalid reconnect interval", () => {
+    const config = {
+      server: {
+        transport: "sse",
+        url: "https://example.com/mcp/sse",
+        reconnectInterval: 50, // Too low, minimum is 100
+      },
+      workflows: [],
+    };
+
+    const result = ConfigSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(
+        result.error.issues.some((issue) =>
+          issue.path.includes("reconnectInterval"),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("should reject SSE config with negative max reconnect attempts", () => {
+    const config = {
+      server: {
+        transport: "sse",
+        url: "https://example.com/mcp/sse",
+        maxReconnectAttempts: -1,
+      },
+      workflows: [],
+    };
+
+    const result = ConfigSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(
+        result.error.issues.some((issue) =>
+          issue.path.includes("maxReconnectAttempts"),
+        ),
+      ).toBe(true);
+    }
+  });
+
   it("should reject invalid transport", () => {
     const config = {
       server: {

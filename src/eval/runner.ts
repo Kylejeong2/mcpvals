@@ -16,6 +16,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { execa, ExecaChildProcess } from "execa";
 import { ServerConfig } from "./config.js";
 import { TraceStore, TraceStoreOptions } from "./trace.js";
@@ -29,6 +30,11 @@ import {
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText, tool } from "ai";
 import { z } from "zod";
+
+type MCPTransports =
+  | SSEClientTransport
+  | StreamableHTTPClientTransport
+  | StdioClientTransport;
 
 export interface ServerRunnerOptions {
   timeout?: number;
@@ -49,6 +55,12 @@ export class ServerRunner {
   private options: ServerRunnerOptions;
   private performanceMonitor: PerformanceMonitor;
   private resilienceManager: ResilienceManager;
+  private sseConnectionState: "connecting" | "connected" | "disconnected" =
+    "disconnected";
+  private reconnectTimeout?: NodeJS.Timeout;
+  private currentTransport?: MCPTransports;
+  private reconnectAttempts?: number;
+  private currentErrorHandler?: (error: Error) => void;
 
   constructor(
     serverConfig: ServerConfig,
@@ -100,8 +112,10 @@ export class ServerRunner {
       async () => {
         if (this.serverConfig.transport === "stdio") {
           await this.startStdioServer();
-        } else {
+        } else if (this.serverConfig.transport === "shttp") {
           await this.startHttpServer();
+        } else if (this.serverConfig.transport === "sse") {
+          await this.startSseServer();
         }
       },
       {
@@ -229,6 +243,163 @@ export class ServerRunner {
           Object.keys(this.serverConfig.headers),
         );
       }
+    }
+  }
+
+  /**
+   * Start an SSE-based MCP server connection
+   */
+  private async startSseServer(): Promise<void> {
+    if (this.serverConfig.transport !== "sse") {
+      throw new Error("Invalid server config for SSE");
+    }
+
+    this.sseConnectionState = "connecting";
+
+    try {
+      await this.createSseConnection();
+    } catch (error) {
+      this.sseConnectionState = "disconnected";
+      throw error;
+    }
+  }
+
+  private async createSseConnection(): Promise<void> {
+    if (this.serverConfig.transport !== "sse") {
+      throw new Error("Invalid server config for SSE connection");
+    }
+
+    // Clean up any existing timeout
+    this.clearReconnectTimeout();
+
+    // Create new SSE transport for each connection attempt
+    const transport = new SSEClientTransport(new URL(this.serverConfig.url), {
+      requestInit: {
+        headers: this.serverConfig.headers,
+      },
+    });
+
+    this.currentTransport = transport;
+
+    // Initialize client if not already done
+    if (!this.client) {
+      this.client = new Client(
+        {
+          name: "mcpvals-evaluator",
+          version: "0.0.1",
+        },
+        {
+          capabilities: {
+            sampling: {},
+          },
+        },
+      );
+
+      // Set up tracing
+      this.setupTracing();
+    }
+
+    // Set up reconnection handling if enabled
+    if (this.serverConfig.reconnect) {
+      this.setupSseReconnection(transport);
+    }
+
+    // Connect
+    await this.client.connect(transport);
+    this.sseConnectionState = "connected";
+
+    if (this.options.debug) {
+      console.log("Connected to SSE MCP server");
+      if (this.serverConfig.headers) {
+        console.log(
+          "Using custom headers:",
+          Object.keys(this.serverConfig.headers),
+        );
+      }
+      console.log(
+        `Reconnection: ${this.serverConfig.reconnect ? "enabled" : "disabled"}`,
+      );
+      if (this.serverConfig.reconnect) {
+        console.log(
+          `Max reconnect attempts: ${this.serverConfig.maxReconnectAttempts}`,
+        );
+        console.log(
+          `Reconnect interval: ${this.serverConfig.reconnectInterval}ms`,
+        );
+      }
+    }
+  }
+
+  private setupSseReconnection(transport: SSEClientTransport): void {
+    if (this.serverConfig.transport !== "sse") {
+      return;
+    }
+
+    // Initialize reconnect attempts if not already set
+    if (this.reconnectAttempts === undefined) {
+      this.reconnectAttempts = 0;
+    }
+
+    const maxAttempts = this.serverConfig.maxReconnectAttempts || 10;
+    const reconnectInterval = this.serverConfig.reconnectInterval || 5000;
+
+    const errorHandler = (error: Error) => {
+      if (this.options.debug) {
+        console.log(`SSE connection error:`, error);
+      }
+
+      // Prevent multiple concurrent reconnection attempts
+      if (this.sseConnectionState === "connecting") {
+        return;
+      }
+
+      this.sseConnectionState = "disconnected";
+
+      if (this.reconnectAttempts! < maxAttempts) {
+        this.reconnectAttempts!++;
+        if (this.options.debug) {
+          console.log(
+            `Attempting to reconnect (${this.reconnectAttempts}/${maxAttempts}) in ${reconnectInterval}ms...`,
+          );
+        }
+
+        this.sseConnectionState = "connecting";
+        this.reconnectTimeout = setTimeout(async () => {
+          try {
+            await this.createSseConnection();
+            this.reconnectAttempts = 0; // Reset counter on successful reconnection
+            if (this.options.debug) {
+              console.log("SSE reconnection successful");
+            }
+          } catch (reconnectError) {
+            this.sseConnectionState = "disconnected";
+            if (this.options.debug) {
+              console.log("SSE reconnection failed:", reconnectError);
+            }
+          }
+        }, reconnectInterval);
+      } else {
+        if (this.options.debug) {
+          console.log(
+            `Max reconnection attempts (${maxAttempts}) reached. Giving up.`,
+          );
+        }
+      }
+    };
+
+    // Clean up any existing error handler
+    if (this.currentErrorHandler) {
+      transport.onerror = undefined;
+    }
+
+    this.currentErrorHandler = errorHandler;
+    transport.onerror = errorHandler;
+  }
+
+  private clearReconnectTimeout(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
     }
   }
 
@@ -992,6 +1163,23 @@ Focus on completing the tasks accurately and efficiently.`;
    * Stop the server and clean up
    */
   async stop(): Promise<void> {
+    // Clear SSE reconnection timeout
+    this.clearReconnectTimeout();
+
+    // Close current transport if it exists
+    if (
+      this.currentTransport &&
+      typeof this.currentTransport.close === "function"
+    ) {
+      try {
+        await this.currentTransport.close();
+      } catch (error) {
+        if (this.options.debug) {
+          console.log("Error closing transport:", error);
+        }
+      }
+    }
+
     // Stop performance monitoring
     this.performanceMonitor.stop();
 
@@ -1047,6 +1235,10 @@ Focus on completing the tasks accurately and efficiently.`;
       this.process.kill();
       this.process = undefined;
     }
+
+    // Reset SSE state
+    this.sseConnectionState = "disconnected";
+    this.currentTransport = undefined;
 
     // Clean up trace store
     this.traceStore.destroy();

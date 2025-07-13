@@ -1,6 +1,7 @@
 import { Config, ServerConfig } from "./config.js";
 import { existsSync } from "fs";
 import { resolve } from "path";
+import { isIP } from "net";
 
 export interface ValidationResult {
   valid: boolean;
@@ -15,6 +16,79 @@ export interface StartupValidationOptions {
   checkServerConnectivity?: boolean;
   validateTestReferences?: boolean;
   strictMode?: boolean;
+}
+
+/**
+ * Check if a hostname is localhost or on a private network
+ */
+function isLocalOrPrivate(hostname: string): boolean {
+  // Check for localhost variations
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1"
+  ) {
+    return true;
+  }
+
+  // Check for IPv4 private ranges
+  const ipVersion = isIP(hostname);
+  if (ipVersion === 4) {
+    const parts = hostname.split(".").map(Number);
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    return (
+      parts[0] === 10 ||
+      (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+      (parts[0] === 192 && parts[1] === 168)
+    );
+  }
+
+  // Check for IPv6 private ranges
+  if (ipVersion === 6) {
+    const lowerHostname = hostname.toLowerCase();
+    return (
+      lowerHostname.startsWith("fc") ||
+      lowerHostname.startsWith("fd") ||
+      lowerHostname.startsWith("fe8") || // fe80::/10 range
+      lowerHostname.startsWith("fe9") ||
+      lowerHostname.startsWith("fea") ||
+      lowerHostname.startsWith("feb")
+    );
+  }
+
+  // Check for development domains
+  return (
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".dev") ||
+    hostname.endsWith(".test") ||
+    hostname.endsWith(".localhost")
+  );
+}
+
+/**
+ * Validate server headers
+ */
+function validateHeaders(headers: Record<string, string>): {
+  errors: string[];
+  warnings: string[];
+  suggestions: string[];
+} {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const suggestions: string[] = [];
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (typeof value !== "string") {
+      errors.push(`Header ${key} must be a string`);
+    }
+    if (key.toLowerCase() === "authorization" && value.startsWith("Bearer ")) {
+      suggestions.push(
+        "Consider using environment variables for authorization tokens",
+      );
+    }
+  }
+
+  return { errors, warnings, suggestions };
 }
 
 export class ConfigurationValidator {
@@ -122,19 +196,16 @@ export class ConfigurationValidator {
       }
     } else if (server.transport === "shttp") {
       // Validate URL
+      let url: URL;
       try {
-        new URL(server.url);
+        url = new URL(server.url);
       } catch {
         errors.push(`Invalid server URL: ${server.url}`);
+        return { valid: errors.length === 0, errors, warnings, suggestions };
       }
 
       // Check URL security
-      const url = new URL(server.url);
-      if (
-        url.protocol === "http:" &&
-        !url.hostname.includes("localhost") &&
-        !url.hostname.includes("127.0.0.1")
-      ) {
+      if (url.protocol === "http:" && !isLocalOrPrivate(url.hostname)) {
         warnings.push(
           "Using HTTP instead of HTTPS for remote server connections is not recommended",
         );
@@ -142,19 +213,66 @@ export class ConfigurationValidator {
 
       // Validate headers
       if (server.headers) {
-        for (const [key, value] of Object.entries(server.headers)) {
-          if (typeof value !== "string") {
-            errors.push(`Header ${key} must be a string`);
-          }
-          if (
-            key.toLowerCase() === "authorization" &&
-            value.startsWith("Bearer ")
-          ) {
-            suggestions.push(
-              "Consider using environment variables for authorization tokens",
-            );
-          }
-        }
+        const headerValidation = validateHeaders(server.headers);
+        errors.push(...headerValidation.errors);
+        warnings.push(...headerValidation.warnings);
+        suggestions.push(...headerValidation.suggestions);
+      }
+    } else if (server.transport === "sse") {
+      // Validate URL
+      let url: URL;
+      try {
+        url = new URL(server.url);
+      } catch {
+        errors.push(`Invalid server URL: ${server.url}`);
+        return { valid: errors.length === 0, errors, warnings, suggestions };
+      }
+
+      // Check URL security
+      if (url.protocol === "http:" && !isLocalOrPrivate(url.hostname)) {
+        warnings.push(
+          "Using HTTP instead of HTTPS for SSE connections is not recommended",
+        );
+      }
+
+      // Validate headers
+      if (server.headers) {
+        const headerValidation = validateHeaders(server.headers);
+        errors.push(...headerValidation.errors);
+        warnings.push(...headerValidation.warnings);
+        suggestions.push(...headerValidation.suggestions);
+      }
+
+      // Validate reconnection settings
+      if (
+        server.reconnectInterval !== undefined &&
+        server.reconnectInterval < 100
+      ) {
+        warnings.push(
+          "Reconnect interval should be at least 100ms to avoid excessive reconnection attempts",
+        );
+      }
+
+      if (
+        server.maxReconnectAttempts !== undefined &&
+        server.maxReconnectAttempts > 50
+      ) {
+        warnings.push(
+          "High number of reconnect attempts may cause excessive load on the server",
+        );
+      }
+
+      // SSE-specific suggestions
+      if (!server.headers || !server.headers["Accept"]) {
+        suggestions.push(
+          "Consider setting 'Accept: text/event-stream' header for SSE connections",
+        );
+      }
+
+      if (!server.headers || !server.headers["Cache-Control"]) {
+        suggestions.push(
+          "Consider setting 'Cache-Control: no-cache' header for SSE connections",
+        );
       }
     }
 
