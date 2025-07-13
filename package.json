@@ -59,7 +59,6 @@
     "ai": "^4.3.16",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
-    "crypto-js": "^4.2.0",
     "execa": "^8.0.1",
     "node-oauth2-server": "^2.4.0",
     "oauth2-server": "^3.1.1",
@@ -68,7 +67,6 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.12",
     "@eslint/js": "^9.30.0",
-    "@types/crypto-js": "^4.2.2",
     "@types/node": "^22.15.8",
     "eslint": "^9.30.0",
     "eslint-plugin-react": "^7.37.5",

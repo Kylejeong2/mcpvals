@@ -415,10 +415,12 @@ export class OAuth2TestRunner {
         case "refresh":
           if (test.token.refreshToken) {
             // Note: In real implementation, would need actual token endpoint
+            const tokenId = `token_${Date.now()}`;
+            this.tokenManager.storeToken(tokenId, test.token);
             const refreshed = await this.tokenManager.refreshToken(
-              "test-token",
-              "https://auth.example.com/token",
-              "test-client-id",
+              tokenId,
+              "https://mock.oauth.test/token",
+              "mock-client-id",
             );
             success = !!refreshed;
             details.refreshedToken = refreshed;
@@ -428,10 +430,12 @@ export class OAuth2TestRunner {
         case "revocation":
           if (test.token.accessToken) {
             // Note: In real implementation, would need actual revocation endpoint
+            const tokenId = `token_${Date.now()}`;
+            this.tokenManager.storeToken(tokenId, test.token);
             success = await this.tokenManager.revokeToken(
-              "test-token",
-              "https://auth.example.com/revoke",
-              "test-client-id",
+              tokenId,
+              "https://mock.oauth.test/revoke",
+              "mock-client-id",
             );
             details.tokenRevoked = success;
           }
@@ -439,7 +443,9 @@ export class OAuth2TestRunner {
 
         case "introspection":
           if (test.token.accessToken) {
-            const isValid = this.tokenManager.isTokenValid("test-token");
+            const tokenId = `token_${Date.now()}`;
+            this.tokenManager.storeToken(tokenId, test.token);
+            const isValid = this.tokenManager.isTokenValid(tokenId);
             success = isValid;
             details.tokenIntrospection = { valid: isValid };
             securityChecks.tokenIntrospectionPerformed = true;

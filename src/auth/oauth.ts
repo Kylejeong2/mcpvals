@@ -239,8 +239,9 @@ export class PKCEUtils {
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
     let result = "";
 
+    const randomBytes = crypto.randomBytes(length);
     for (let i = 0; i < length; i++) {
-      result += possible.charAt(Math.floor(Math.random() * possible.length));
+      result += possible.charAt(randomBytes[i] % possible.length);
     }
 
     return result;
