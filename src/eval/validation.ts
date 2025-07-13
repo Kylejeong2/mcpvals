@@ -43,13 +43,16 @@ function isLocalOrPrivate(hostname: string): boolean {
     );
   }
 
-  // Check for IPv6 private ranges (simplified)
+  // Check for IPv6 private ranges
   if (ipVersion === 6) {
+    const lowerHostname = hostname.toLowerCase();
     return (
-      hostname.startsWith("fc") ||
-      hostname.startsWith("fd") ||
-      hostname.startsWith("fe80") ||
-      hostname === "::1"
+      lowerHostname.startsWith("fc") ||
+      lowerHostname.startsWith("fd") ||
+      lowerHostname.startsWith("fe8") || // fe80::/10 range
+      lowerHostname.startsWith("fe9") ||
+      lowerHostname.startsWith("fea") ||
+      lowerHostname.startsWith("feb")
     );
   }
 

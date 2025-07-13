@@ -59,6 +59,8 @@ export class ServerRunner {
     "disconnected";
   private reconnectTimeout?: NodeJS.Timeout;
   private currentTransport?: MCPTransports;
+  private reconnectAttempts?: number;
+  private currentErrorHandler?: (error: Error) => void;
 
   constructor(
     serverConfig: ServerConfig,
@@ -328,12 +330,16 @@ export class ServerRunner {
     }
   }
 
-  private setupSseReconnection(transport: MCPTransports): void {
+  private setupSseReconnection(transport: SSEClientTransport): void {
     if (this.serverConfig.transport !== "sse") {
       return;
     }
 
-    let reconnectAttempts = 0;
+    // Initialize reconnect attempts if not already set
+    if (this.reconnectAttempts === undefined) {
+      this.reconnectAttempts = 0;
+    }
+
     const maxAttempts = this.serverConfig.maxReconnectAttempts || 10;
     const reconnectInterval = this.serverConfig.reconnectInterval || 5000;
 
@@ -349,11 +355,11 @@ export class ServerRunner {
 
       this.sseConnectionState = "disconnected";
 
-      if (reconnectAttempts < maxAttempts) {
-        reconnectAttempts++;
+      if (this.reconnectAttempts! < maxAttempts) {
+        this.reconnectAttempts!++;
         if (this.options.debug) {
           console.log(
-            `Attempting to reconnect (${reconnectAttempts}/${maxAttempts}) in ${reconnectInterval}ms...`,
+            `Attempting to reconnect (${this.reconnectAttempts}/${maxAttempts}) in ${reconnectInterval}ms...`,
           );
         }
 
@@ -361,7 +367,7 @@ export class ServerRunner {
         this.reconnectTimeout = setTimeout(async () => {
           try {
             await this.createSseConnection();
-            reconnectAttempts = 0; // Reset counter on successful reconnection
+            this.reconnectAttempts = 0; // Reset counter on successful reconnection
             if (this.options.debug) {
               console.log("SSE reconnection successful");
             }
@@ -381,6 +387,12 @@ export class ServerRunner {
       }
     };
 
+    // Clean up any existing error handler
+    if (this.currentErrorHandler) {
+      transport.onerror = undefined;
+    }
+
+    this.currentErrorHandler = errorHandler;
     transport.onerror = errorHandler;
   }
 
