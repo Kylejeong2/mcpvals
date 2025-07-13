@@ -244,10 +244,11 @@ MCPVals loads **either** a `.json` file **or** a `.ts/.js` module that `export d
 
 Defines how to connect to your MCP server.
 
-- `transport`: `stdio` or `shttp` (Streaming HTTP).
+- `transport`: `stdio`, `shttp` (Streaming HTTP), or `sse` (Server-Sent Events).
 - `command`/`args`: (for `stdio`) The command to execute your server.
 - `env`: (for `stdio`) Environment variables to set for the child process.
-- `url`/`headers`: (for `shttp`) The endpoint and headers for a remote server.
+- `url`/`headers`: (for `shttp` and `sse`) The endpoint and headers for a remote server.
+- `reconnect`/`reconnectInterval`/`maxReconnectAttempts`: (for `sse`) Reconnection settings for SSE connections.
 
 **Example `shttp` with Authentication:**
 
@@ -260,6 +261,25 @@ Defines how to connect to your MCP server.
       "Authorization": "Bearer ${API_TOKEN}",
       "X-API-Key": "${API_KEY}"
     }
+  }
+}
+```
+
+**Example `sse` with Reconnection:**
+
+```json
+{
+  "server": {
+    "transport": "sse",
+    "url": "https://api.example.com/mcp/sse",
+    "headers": {
+      "Accept": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Authorization": "Bearer ${API_TOKEN}"
+    },
+    "reconnect": true,
+    "reconnectInterval": 5000,
+    "maxReconnectAttempts": 10
   }
 }
 ```
@@ -747,6 +767,7 @@ The library exports all configuration and result types for use in TypeScript pro
 - [x] OAuth 2.1 authentication testing with PKCE, resource indicators, and multi-tenant support
 - [x] Comprehensive security validation framework
 - [x] Enhanced console reporting for all evaluation types
+- [x] Server-Sent Events (SSE) transport support with automatic reconnection
 
 **🚧 In Progress:**
 
@@ -776,10 +797,24 @@ import type { Config } from "mcpvals";
 
 export default {
   server: {
-    transport: "stdio",
+    transport: "stdio", // Also supports "shttp" and "sse"
     command: "node",
     args: ["./my-mcp-server.js"],
   },
+
+  // Alternative SSE server configuration:
+  // server: {
+  //   transport: "sse",
+  //   url: "https://api.example.com/mcp/sse",
+  //   headers: {
+  //     "Accept": "text/event-stream",
+  //     "Cache-Control": "no-cache",
+  //     "Authorization": "Bearer ${API_TOKEN}"
+  //   },
+  //   reconnect: true,
+  //   reconnectInterval: 5000,
+  //   maxReconnectAttempts: 10
+  // },
 
   // Test tools
   toolHealthSuites: [

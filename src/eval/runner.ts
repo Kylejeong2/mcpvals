@@ -16,6 +16,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { execa, ExecaChildProcess } from "execa";
 import { ServerConfig } from "./config.js";
 import { TraceStore, TraceStoreOptions } from "./trace.js";
@@ -100,8 +101,10 @@ export class ServerRunner {
       async () => {
         if (this.serverConfig.transport === "stdio") {
           await this.startStdioServer();
-        } else {
+        } else if (this.serverConfig.transport === "shttp") {
           await this.startHttpServer();
+        } else if (this.serverConfig.transport === "sse") {
+          await this.startSseServer();
         }
       },
       {
@@ -227,6 +230,98 @@ export class ServerRunner {
         console.log(
           "Using custom headers:",
           Object.keys(this.serverConfig.headers),
+        );
+      }
+    }
+  }
+
+  /**
+   * Start an SSE-based MCP server connection
+   */
+  private async startSseServer(): Promise<void> {
+    if (this.serverConfig.transport !== "sse") {
+      throw new Error("Invalid server config for SSE");
+    }
+
+    // Create SSE transport with proper options
+    const transport = new SSEClientTransport(new URL(this.serverConfig.url), {
+      requestInit: {
+        headers: this.serverConfig.headers,
+      },
+    });
+
+    // Initialize client
+    this.client = new Client(
+      {
+        name: "mcpvals-evaluator",
+        version: "0.0.1",
+      },
+      {
+        capabilities: {
+          sampling: {},
+        },
+      },
+    );
+
+    // Set up tracing
+    this.setupTracing();
+
+    // Set up reconnection handling if enabled
+    if (this.serverConfig.reconnect) {
+      let reconnectAttempts = 0;
+      const maxAttempts = this.serverConfig.maxReconnectAttempts || 10;
+      const reconnectInterval = this.serverConfig.reconnectInterval || 5000;
+
+      transport.onerror = (error) => {
+        if (this.options.debug) {
+          console.log(`SSE connection error:`, error);
+        }
+
+        if (reconnectAttempts < maxAttempts) {
+          reconnectAttempts++;
+          if (this.options.debug) {
+            console.log(
+              `Attempting to reconnect (${reconnectAttempts}/${maxAttempts}) in ${reconnectInterval}ms...`,
+            );
+          }
+
+          setTimeout(async () => {
+            try {
+              await this.client?.connect(transport);
+              reconnectAttempts = 0; // Reset counter on successful reconnection
+              if (this.options.debug) {
+                console.log("SSE reconnection successful");
+              }
+            } catch (reconnectError) {
+              if (this.options.debug) {
+                console.log("SSE reconnection failed:", reconnectError);
+              }
+            }
+          }, reconnectInterval);
+        }
+      };
+    }
+
+    // Connect
+    await this.client.connect(transport);
+
+    if (this.options.debug) {
+      console.log("Connected to SSE MCP server");
+      if (this.serverConfig.headers) {
+        console.log(
+          "Using custom headers:",
+          Object.keys(this.serverConfig.headers),
+        );
+      }
+      console.log(
+        `Reconnection: ${this.serverConfig.reconnect ? "enabled" : "disabled"}`,
+      );
+      if (this.serverConfig.reconnect) {
+        console.log(
+          `Max reconnect attempts: ${this.serverConfig.maxReconnectAttempts}`,
+        );
+        console.log(
+          `Reconnect interval: ${this.serverConfig.reconnectInterval}ms`,
         );
       }
     }

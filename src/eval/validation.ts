@@ -156,6 +156,74 @@ export class ConfigurationValidator {
           }
         }
       }
+    } else if (server.transport === "sse") {
+      // Validate URL
+      try {
+        new URL(server.url);
+      } catch {
+        errors.push(`Invalid server URL: ${server.url}`);
+      }
+
+      // Check URL security
+      const url = new URL(server.url);
+      if (
+        url.protocol === "http:" &&
+        !url.hostname.includes("localhost") &&
+        !url.hostname.includes("127.0.0.1")
+      ) {
+        warnings.push(
+          "Using HTTP instead of HTTPS for SSE connections is not recommended",
+        );
+      }
+
+      // Validate headers
+      if (server.headers) {
+        for (const [key, value] of Object.entries(server.headers)) {
+          if (typeof value !== "string") {
+            errors.push(`Header ${key} must be a string`);
+          }
+          if (
+            key.toLowerCase() === "authorization" &&
+            value.startsWith("Bearer ")
+          ) {
+            suggestions.push(
+              "Consider using environment variables for authorization tokens",
+            );
+          }
+        }
+      }
+
+      // Validate reconnection settings
+      if (
+        server.reconnectInterval !== undefined &&
+        server.reconnectInterval < 100
+      ) {
+        warnings.push(
+          "Reconnect interval should be at least 100ms to avoid excessive reconnection attempts",
+        );
+      }
+
+      if (
+        server.maxReconnectAttempts !== undefined &&
+        server.maxReconnectAttempts > 50
+      ) {
+        warnings.push(
+          "High number of reconnect attempts may cause excessive load on the server",
+        );
+      }
+
+      // SSE-specific suggestions
+      if (!server.headers || !server.headers["Accept"]) {
+        suggestions.push(
+          "Consider setting 'Accept: text/event-stream' header for SSE connections",
+        );
+      }
+
+      if (!server.headers || !server.headers["Cache-Control"]) {
+        suggestions.push(
+          "Consider setting 'Cache-Control: no-cache' header for SSE connections",
+        );
+      }
     }
 
     return { valid: errors.length === 0, errors, warnings, suggestions };
