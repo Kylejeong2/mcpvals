@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "bin": {
-    "mcpvals": "./dist/cli/index.js"
+    "mcpvals": "dist/cli/index.js"
   },
   "exports": {
     ".": {
@@ -16,7 +16,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "repository": {
     "directory": ".",
