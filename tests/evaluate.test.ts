@@ -1,13 +1,17 @@
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
 import { evaluate } from "../src/eval/index";
-import { Config } from "../src/eval/config";
+import { Config, createToolName } from "../src/eval/config";
 import { WorkflowEvaluation } from "../src/eval/deterministic";
 import { ToolHealthResult } from "../src/eval/tool-health";
 
 // Mock all dependencies
-vi.mock("../src/eval/config", () => ({
-  loadConfig: vi.fn(),
-}));
+vi.mock("../src/eval/config", async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    loadConfig: vi.fn(),
+  };
+});
 
 vi.mock("../src/eval/runner", () => ({
   ServerRunner: vi.fn(),
@@ -166,9 +170,7 @@ describe("evaluate", () => {
           parallel: false,
           tests: [
             {
-              name: "add" as unknown as string & {
-                readonly [Symbol.toStringTag]: "ToolName";
-              },
+              name: createToolName("add"),
               args: { a: 2, b: 3 },
               expectedResult: 5,
               retries: 0,

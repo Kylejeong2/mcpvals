@@ -356,6 +356,9 @@ export async function evaluate(
       console.log("\n" + "=".repeat(60));
       console.log("Running Workflow Evaluations...");
 
+      // Clear trace store before workflow evaluations to avoid interference from tool health tests
+      traceStore.clear();
+
       // Run each workflow
       for (const workflow of config.workflows) {
         console.log(`\nRunning workflow: ${workflow.name}`);

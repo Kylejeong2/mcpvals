@@ -4,13 +4,35 @@ import { resolve } from "path";
 import { OAuth2TestSuiteSchema } from "../auth/oauth.js";
 
 // Branded types for better type safety
-const ToolNameSchema = z.string().min(1).brand<"ToolName">();
-const PromptNameSchema = z.string().min(1).brand<"PromptName">();
-const ResourceUriSchema = z
+export const ToolNameSchema = z.string().min(1).brand<"ToolName">();
+export const PromptNameSchema = z.string().min(1).brand<"PromptName">();
+export const ResourceUriSchema = z
   .string()
   .url()
   .or(z.string().regex(/^[a-zA-Z][a-zA-Z0-9+.-]*:/))
   .brand<"ResourceUri">();
+
+// Helper functions to create branded types
+export function createToolName(name: string): z.infer<typeof ToolNameSchema> {
+  return ToolNameSchema.parse(name);
+}
+
+export function createPromptName(
+  name: string,
+): z.infer<typeof PromptNameSchema> {
+  return PromptNameSchema.parse(name);
+}
+
+export function createResourceUri(
+  uri: string,
+): z.infer<typeof ResourceUriSchema> {
+  return ResourceUriSchema.parse(uri);
+}
+
+// Export branded type definitions
+export type ToolName = z.infer<typeof ToolNameSchema>;
+export type PromptName = z.infer<typeof PromptNameSchema>;
+export type ResourceUri = z.infer<typeof ResourceUriSchema>;
 
 // Common argument schema with better validation
 const ArgumentValueSchema = z.union([

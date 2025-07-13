@@ -70,15 +70,12 @@ describe("ServerRunner", () => {
     );
     const execaModule = await import("execa");
 
-    // @ts-expect-error - Mock implementations don't need full interface
-    vi.mocked(clientModule.Client).mockImplementation(() => mockClient);
-    // @ts-expect-error - Mock implementations don't need full interface
+    vi.mocked(clientModule.Client).mockImplementation(() => mockClient as any);
     vi.mocked(stdioModule.StdioClientTransport).mockImplementation(
-      () => mockTransport,
+      () => mockTransport as any,
     );
-    // @ts-expect-error - Mock implementations don't need full interface
     vi.mocked(httpModule.StreamableHTTPClientTransport).mockImplementation(
-      () => mockTransport,
+      () => mockTransport as any,
     );
     vi.mocked(execaModule.execa).mockImplementation(mockExeca);
 
