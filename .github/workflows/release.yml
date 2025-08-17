@@ -3,56 +3,58 @@ name: Release
 on:
   push:
     branches:
-      - master
-  workflow_dispatch:
+      - main
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
     steps:
-      - name: Checkout
+      - name: Checkout Repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_TOKEN_PULL_REQUESTS }}
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20.x
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: 20.x
           registry-url: "https://registry.npmjs.org"
+          cache: pnpm
 
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        id: pnpm-setup
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 9.4.0
           run_install: false
 
-      - name: Install Dependencies
-        id: pnpm-install
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Package
-        run: pnpm build
+      - name: Build
+        run: pnpm run build
 
-      - name: Run Tests
-        run: pnpm test
-
-      - name: Create Release PR or Publish Packages
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm release
-          version: pnpm version-packages
-          commit: "chore: update package versions"
-          title: "chore: update package versions"
+          version: pnpm run version-packages
+          publish: pnpm run release
+          createGithubReleases: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_PULL_REQUESTS }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish Canary
+        if: github.ref == 'refs/heads/main'
+        run: |
+          pnpm config set //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          git checkout main
+          pnpm run release-canary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
