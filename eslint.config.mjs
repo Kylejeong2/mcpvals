@@ -15,6 +15,7 @@ export default [
       "**/*.yml",
       "**/*.yaml",
       "**/*.md",
+      ".github/**/*",
     ],
   },
   {

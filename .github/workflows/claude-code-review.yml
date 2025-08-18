@@ -1,8 +1,8 @@
 name: Claude Code Review
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request:
+    types: [opened, synchronize]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
@@ -21,16 +21,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
-      issues: write
+      pull-requests: read
+      issues: read
+      id-token: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
           # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
           # model: "claude-opus-4-20250514"
@@ -38,6 +43,7 @@ jobs:
           # Direct prompt for automated review (no @claude mention needed)
           direct_prompt: |
             Please review this pull request and look for bugs and security issues. Only report on bugs and potential vulnerabilities you find. Be concise.
+
 
           # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
           # use_sticky_comment: true
