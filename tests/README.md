@@ -1,76 +1,59 @@
 # MCPVals Library Test Suite
 
-This directory contains comprehensive tests for the MCPVals library, covering all major components and functionality.
+This directory contains comprehensive tests for the MCPVals library, organized by test type for better maintainability and development workflow.
 
-## Test Structure
+## Test Organization
 
-### Unit Tests
+### Unit Tests (`unit/`)
 
-#### Core Evaluation Components
+Fast, isolated tests that focus on individual components without external dependencies.
 
-- **`config.test.ts`** - Configuration loading and validation
-  - JSON and TypeScript config parsing
-  - Environment variable expansion
-  - Zod schema validation
-  - Error handling for invalid configurations
+#### Core Components (`unit/core/`)
 
+- **`config.test.ts`** - Configuration loading, validation, and schema parsing
 - **`trace.test.ts`** - TraceStore operations and data management
-  - Trace entry storage and retrieval
-  - Tool call and result tracking
-  - Conversation message management
-  - Data filtering and querying
 
-- **`deterministic.test.ts`** - DeterministicEvaluator metrics
-  - End-to-end success evaluation
-  - Tool invocation order checking
-  - Tool call health assessment
-  - Edge cases and error conditions
+#### Evaluators (`unit/evaluators/`)
 
-- **`tool-health.test.ts`** - ToolTester functionality
-  - Individual tool test execution
-  - Tool health suite management
-  - Retry logic and timeout handling
-  - Result validation and scoring
+- **`deterministic.test.ts`** - DeterministicEvaluator metrics and logic
+- **`llm-judge.test.ts`** - LLM judge evaluation functionality
 
-- **`runner.test.ts`** - ServerRunner operations
-  - MCP server lifecycle management
-  - Tool listing and calling
-  - Workflow execution with LLM
-  - Both stdio and HTTP transport modes
+#### Infrastructure (`unit/infrastructure/`)
 
-#### Main Evaluation Function
+- **`sse-validation.test.ts`** - SSE transport validation and configuration
 
-- **`evaluate.test.ts`** - Main integration point
-  - Complete evaluation pipeline
-  - Configuration validation
-  - LLM judge integration
-  - Reporter selection and output
-  - Error handling and cleanup
+#### Reporters (`unit/reporters/`)
 
-#### Command Line Interface
+- **`console.test.ts`** - Console output formatting and display
+
+### Integration Tests (`integration/`)
+
+Tests that verify component interactions using mocked external dependencies.
+
+- **`evaluate.test.ts`** - Main evaluation pipeline integration
+- **`runner.test.ts`** - ServerRunner with mocked MCP servers
+- **`tool-health.test.ts`** - Tool health testing with mocked tools
+- **`resource.test.ts`** - Resource evaluation with mocked resources
+- **`prompt.test.ts`** - Prompt evaluation with mocked prompts
+- **`sampling.test.ts`** - Sampling evaluation with mocked sampling
+- **`oauth.test.ts`** - OAuth authentication flow testing
+
+### End-to-End Tests (`e2e/`)
+
+Full system tests with real external dependencies (when possible).
+
+- **`integration.test.ts`** - Complete evaluation scenarios with real configurations
+
+### CLI Tests (`cli/`)
+
+Command-line interface specific tests.
 
 - **`cli.test.ts`** - CLI command parsing and execution
-  - Argument and option parsing
-  - Command forwarding to evaluation functions
-  - Exit code handling
-  - Error reporting
+- **`eval.test.ts`** - Evaluation command integration
 
-#### Reporting
+### Test Fixtures (`fixtures/`)
 
-- **`reporter-console.test.ts`** - Console output formatting
-  - Workflow evaluation reporting
-  - Tool health result display
-  - Combined reporting modes
-  - Formatting and display consistency
-
-### Integration Tests
-
-- **`integration.test.ts`** - End-to-end scenarios
-  - Full evaluation pipeline with real configurations
-  - Multiple workflow and tool health suite combinations
-  - Error handling and recovery
-  - Performance and reliability testing
-  - Real-world usage scenarios
+Shared test data, mock responses, and configuration files.
 
 ## Test Coverage Areas
 
@@ -139,27 +122,69 @@ This directory contains comprehensive tests for the MCPVals library, covering al
 ### All Tests
 
 ```bash
-npm test
+pnpm test
+```
+
+### By Test Type
+
+```bash
+# Unit tests only (fast)
+pnpm test unit/
+
+# Integration tests only
+pnpm test integration/
+
+# End-to-end tests only
+pnpm test e2e/
+
+# CLI tests only
+pnpm test cli/
 ```
 
 ### Specific Test Files
 
 ```bash
-npm test config.test.ts
-npm test integration.test.ts
+pnpm test unit/core/config.test.ts
+pnpm test integration/evaluate.test.ts
 ```
 
 ### Watch Mode
 
 ```bash
-npm test -- --watch
+pnpm test --watch
 ```
 
 ### Coverage Report
 
 ```bash
-npm run test:coverage
+pnpm test --coverage
 ```
+
+## Test Organization Benefits
+
+### 🚀 **Performance**
+
+- Unit tests run quickly during development
+- Integration tests provide broader coverage
+- E2E tests ensure system reliability
+
+### 🎯 **Focus**
+
+- Easy to run specific test categories
+- Clear separation of concerns
+- Faster feedback loops
+
+### 🔧 **Maintenance**
+
+- Related tests are grouped together
+- Easier to locate and update tests
+- Clear test dependencies and requirements
+
+### 📊 **CI/CD Optimization**
+
+- Parallel test execution by category
+- Fail-fast unit testing
+- Comprehensive pre-release validation
 
 ## Test Utilities and Mocking
 
@@ -178,40 +203,13 @@ npm run test:coverage
 - Temporary file management
 - Environment variable setup/teardown
 
-## Test Data and Fixtures
-
-### Example Configurations
-
-- Basic stdio server setup
-- HTTP server with authentication
-- Multi-workflow configurations
-- Tool health suite definitions
-- Environment variable examples
-
-### Mock Responses
-
-- Successful tool calls and results
-- Error conditions and failures
-- LLM conversation flows
-- Server capability listings
-
-## Coverage Goals
-
-The test suite aims for comprehensive coverage of:
-
-1. **Functional Coverage**: All public APIs and main code paths
-2. **Error Coverage**: All error conditions and edge cases
-3. **Integration Coverage**: End-to-end workflows and real-world scenarios
-4. **Performance Coverage**: Timeout handling and resource management
-5. **Configuration Coverage**: All supported configuration options
-
 ## Best Practices
 
 ### Test Organization
 
-- One test file per source module
-- Descriptive test names explaining the scenario
-- Grouped tests by functionality using `describe` blocks
+- Group related functionality in the same directory
+- Use descriptive test names explaining the scenario
+- Organize tests by functionality using `describe` blocks
 - Setup and teardown in `beforeEach`/`afterEach` hooks
 
 ### Mocking Strategy

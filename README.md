@@ -1,4 +1,4 @@
-# MCPVals – Comprehensive Usage & Reference Guide
+# MCPVals
 
 A comprehensive evaluation library for Model Context Protocol (MCP) servers. Test and validate your MCP servers with complete MCP specification coverage including Tools, Resources, Prompts, and Sampling with deterministic metrics, security validation, and optional LLM-based evaluation.
 

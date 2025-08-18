@@ -1,15 +1,18 @@
 import chalk from "chalk";
-import { WorkflowEvaluation, EvaluationResult } from "../deterministic.js";
-import { ToolHealthResult, ToolTestResult } from "../tool-health.js";
+import {
+  WorkflowEvaluation,
+  EvaluationResult,
+} from "../evaluators/deterministic.js";
+import { ToolHealthResult, ToolTestResult } from "../evaluators/tool-health.js";
 import {
   ResourceDiscoveryResult,
   ResourceSubscriptionResult,
   ResourceSuiteResult,
   ResourceTemplateResult,
   ResourceTestResult,
-} from "../resource.js";
-import { PromptSuiteResult } from "../prompt.js";
-import { SamplingSuiteResult } from "../sampling.js";
+} from "../evaluators/resource.js";
+import { PromptSuiteResult } from "../evaluators/prompt.js";
+import { SamplingSuiteResult } from "../evaluators/sampling.js";
 
 export class ConsoleReporter {
   /**
