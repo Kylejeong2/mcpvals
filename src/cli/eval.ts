@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { evaluate } from "../eval/index.js";
+import { evaluate, WorkflowStep } from "../eval/core/index.js";
 import chalk from "chalk";
 import { resolve } from "path";
 
@@ -45,7 +45,7 @@ export const listCommand = new Command("list")
   .argument("<config>", "Path to evaluation config file")
   .action(async (configPath: string) => {
     try {
-      const { loadConfig } = await import("../eval/config.js");
+      const { loadConfig } = await import("../eval/core/config.js");
       const absolutePath = resolve(process.cwd(), configPath);
       const config = await loadConfig(absolutePath);
 
@@ -56,7 +56,8 @@ export const listCommand = new Command("list")
         );
         console.log(`    Steps: ${workflow.steps.length}`);
         const toolCount = workflow.steps.reduce(
-          (sum, step) => sum + (step.expectTools?.length || 0),
+          (sum: number, step: WorkflowStep) =>
+            sum + (step.expectTools?.length || 0),
           0,
         );
         if (toolCount > 0) {
