@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
     branches:
-      - master
+      - main
   push:
     branches:
-      - master
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Dependencies
         id: pnpm-install
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Type Check
         run: pnpm typecheck
@@ -42,3 +42,18 @@ jobs:
 
       - name: Run Tests
         run: pnpm test
+
+      - name: Fetch base ref
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.base_ref }} --depth=1
+
+      - name: Ensure changeset for src/package changes
+        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}... | grep -E '^(src/|package.json)'; then
+            if ! git diff --name-only origin/${{ github.base_ref }}... | grep -E '^\.changeset/.+\.md$'; then
+              echo "Changes detected in src/ or package.json but no changeset found."
+              echo "Run: pnpm changeset"
+              exit 1
+            fi
+          fi

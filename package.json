@@ -1,6 +1,6 @@
 {
   "name": "mcpvals",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Evaluation library for Model Context Protocol servers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -36,8 +36,12 @@
     "version-packages": "changeset version",
     "changeset": "changeset",
     "release": "pnpm build && changeset publish",
-    "prettier": "prettier --write .",
-    "lint": "eslint . --fix"
+    "release-canary": "pnpm build && changeset version --snapshot && changeset publish --tag alpha",
+    "format": "prettier --write .",
+    "lint": "eslint . --fix",
+    "pre-commit": "lint-staged",
+    "postinstall": "pnpm build",
+    "prepare": "husky"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,scss,md}": [
@@ -67,6 +71,7 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.0",
     "@changesets/cli": "^2.27.12",
     "@eslint/js": "^9.30.0",
     "@types/node": "^22.15.8",
@@ -78,12 +83,13 @@
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.35.0",
-    "vitest": "^3.2.1"
+    "vitest": "^3.2.1",
+    "lint-staged": "^15.2.10"
   },
   "peerDependenciesMeta": {},
   "packageManager": "pnpm@9.4.0",
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": false
   }
 }
