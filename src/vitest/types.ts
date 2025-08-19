@@ -62,6 +62,12 @@ export interface MCPTestContext {
     listResources: () => Promise<string[]>;
     /** Get a resource */
     getResource: (uri: string) => Promise<unknown>;
+    /** List available resource templates */
+    listResourceTemplates: () => Promise<string[]>;
+    /** Subscribe to a resource */
+    subscribeToResource: (uri: string) => Promise<unknown>;
+    /** Unsubscribe from a resource */
+    unsubscribeFromResource: (uri: string) => Promise<unknown>;
     /** List available prompts */
     listPrompts: () => Promise<string[]>;
     /** Get a prompt */
@@ -69,6 +75,80 @@ export interface MCPTestContext {
       name: string,
       args?: Record<string, unknown>,
     ) => Promise<unknown>;
+    /** Create a sampling message (server-to-client simulation) */
+    createSamplingMessage: (request: {
+      includeContext?: Array<{
+        type: "text" | "image" | "resource";
+        text?: string;
+        data?: string;
+        mimeType?: string;
+        uri?: string;
+      }>;
+      messages: Array<{
+        role: "user" | "assistant";
+        content: {
+          type: "text" | "image";
+          text?: string;
+          data?: string;
+          mimeType?: string;
+        };
+      }>;
+      modelPreferences?: {
+        costPriority?: number;
+        speedPriority?: number;
+        intelligencePriority?: number;
+      };
+      systemPrompt?: string;
+      maxTokens?: number;
+      metadata?: Record<string, unknown>;
+    }) => Promise<{
+      requestId: string;
+      userApprovalRequired: boolean;
+      messages: unknown[];
+    }>;
+    /** Simulate user approval for a sampling request */
+    simulateUserApproval: (
+      requestId: string,
+      approved: boolean,
+      modifiedRequest?: {
+        messages?: Array<{
+          role: "user" | "assistant";
+          content: {
+            type: "text" | "image";
+            text?: string;
+            data?: string;
+            mimeType?: string;
+          };
+        }>;
+        modelPreferences?: {
+          costPriority?: number;
+          speedPriority?: number;
+          intelligencePriority?: number;
+        };
+      },
+    ) => Promise<{
+      approved: boolean;
+      response?: { role: "assistant"; content: { type: "text"; text: string } };
+      error?: string;
+    }>;
+    /** Validate sampling model preferences */
+    validateModelPreferences: (preferences?: {
+      costPriority?: number;
+      speedPriority?: number;
+      intelligencePriority?: number;
+    }) => { valid: boolean; errors: string[] };
+    /** Validate sampling message content types */
+    validateSamplingContent: (
+      messages: Array<{
+        role: "user" | "assistant";
+        content: {
+          type: "text" | "image";
+          text?: string;
+          data?: string;
+          mimeType?: string;
+        };
+      }>,
+    ) => { valid: boolean; errors: string[] };
   };
 }
 

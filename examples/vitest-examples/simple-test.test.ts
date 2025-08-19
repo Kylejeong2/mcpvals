@@ -23,7 +23,7 @@ describe("Vitest Integration - Scorers Only", () => {
       const expected = { tools: ["echo"] };
       const mockContext = {
         server: null,
-        tools: [],
+        tools: [{ name: "echo", description: "Echo tool" }], // Add the echo tool
         testCase: { input: {}, expected: {} },
         utils: {} as any,
       };
@@ -44,7 +44,7 @@ describe("Vitest Integration - Scorers Only", () => {
       const mockContext = {
         server: null,
         tools: [],
-        testCase: { input: {}, expected: {} },
+        testCase: { input: {}, expected: {}, name: "latency test" },
         utils: {} as any,
       };
 
@@ -64,7 +64,7 @@ describe("Vitest Integration - Scorers Only", () => {
       const mockContext = {
         server: null,
         tools: [],
-        testCase: { input: {}, expected: {} },
+        testCase: { input: {}, expected: {}, name: "content test" },
         utils: {} as any,
       };
 

@@ -91,7 +91,7 @@ describe("WorkflowScorer", () => {
       toolCalls: [{ name: "greet" }],
     };
 
-    const score = await scorer.score(output, {}, mockContext);
+    const score = await scorer.score(output, {});
     expect(score).toBe(1);
   });
 
@@ -106,8 +106,8 @@ describe("WorkflowScorer", () => {
       toolCalls: [],
     };
 
-    const score = await scorer.score(output, {}, mockContext);
-    expect(score).toBeLessThan(0.6);
+    const score = await scorer.score(output, {});
+    expect(score).toBeLessThan(0.5);
   });
 
   it("should handle insufficient messages", async () => {
@@ -122,7 +122,7 @@ describe("WorkflowScorer", () => {
       toolCalls: [],
     };
 
-    const score = await scorer.score(output, {}, mockContext);
+    const score = await scorer.score(output, {});
     expect(score).toBeLessThan(1);
   });
 });
