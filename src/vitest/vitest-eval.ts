@@ -114,7 +114,7 @@ export async function setupMCPServer(
 
     validateSamplingContent: (messages) => {
       if (!currentServerRunner) throw new Error("Server not initialized");
-      return currentServerRunner.validateSamplingContent(messages as never);
+      return currentServerRunner.validateSamplingContent(messages);
     },
   };
 
@@ -217,12 +217,18 @@ export function describeEval(config: MCPTestConfig): void {
   describe(config.name, () => {
     let serverUtils: MCPTestContext["utils"];
     let tools: Array<{ name: string; description?: string }> = [];
+    let debugEnabled = false;
 
     beforeAll(async () => {
+      const debugEnv = process.env.VITEST_MCP_DEBUG;
+      const debug = debugEnv
+        ? ["1", "true", "yes", "on"].includes(debugEnv.toLowerCase())
+        : false;
       serverUtils = await setupMCPServer(config.server, {
         timeout: config.timeout,
-        debug: process.env.VITEST_MCP_DEBUG === "true",
+        debug,
       });
+      debugEnabled = debug;
       // Get actual tools list
       if (currentServerRunner) {
         tools = await currentServerRunner.listTools();
@@ -328,7 +334,7 @@ export function describeEval(config: MCPTestConfig): void {
         };
 
         // Log detailed results if in debug mode
-        if (process.env.VITEST_MCP_DEBUG === "true") {
+        if (debugEnabled) {
           console.log("\n📊 MCP Evaluation Results:");
           console.log(
             `Total: ${stats.totalTests}, Passed: ${stats.passedTests}, Failed: ${stats.failedTests}`,

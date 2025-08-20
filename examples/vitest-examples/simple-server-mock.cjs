@@ -149,7 +149,8 @@ function main() {
   process.stdin.setEncoding("utf8");
 
   process.stdin.on("data", (chunk) => {
-    buffer += chunk;
+    // Limit buffer growth to mitigate potential DoS via oversized input
+    buffer += chunk.slice(0, 1_000_000);
 
     // Process complete messages (assuming one per line)
     const lines = buffer.split("\n");
@@ -158,11 +159,27 @@ function main() {
     for (const line of lines) {
       if (line.trim()) {
         try {
+          // Basic structural validation before trusting the parsed object
+          // Also cap line length to avoid excessive memory usage
+          if (line.length > 1_000_000) {
+            throw new Error("Input too large");
+          }
           const message = JSON.parse(line);
+          if (
+            typeof message !== "object" ||
+            message === null ||
+            ("__proto__" in message) ||
+            ("constructor" in message &&
+              message.constructor &&
+              message.constructor !== Object)
+          ) {
+            throw new Error("Invalid JSON-RPC message structure");
+          }
           const response = server.handleMessage(message);
           process.stdout.write(JSON.stringify(response) + "\n");
-        } catch {
-          const errorResponse = server.createError(null, -32700, "Parse error");
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Parse error";
+          const errorResponse = server.createError(null, -32700, msg);
           process.stdout.write(JSON.stringify(errorResponse) + "\n");
         }
       }

@@ -7,6 +7,7 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "fs/promises";
+import path from "node:path";
 
 const server = new Server(
   {
@@ -48,8 +49,40 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const { uri } = request.params;
 
-  // Extract path from file:// URI
-  const filePath = uri.replace("file://", "");
+  // Securely resolve path from file:// URI and restrict access to /tmp
+  const BASE_DIR = "/tmp";
+  let filePath = "";
+  try {
+    const url = new URL(uri);
+    if (url.protocol !== "file:") {
+      throw new Error("Invalid protocol: only file:// URIs are allowed");
+    }
+
+    const decodedPath = decodeURIComponent(url.pathname);
+    const normalized = path.normalize(decodedPath);
+
+    // Ensure access is strictly within BASE_DIR
+    const baseResolved = path.resolve(BASE_DIR);
+    const targetResolved = path.resolve(normalized);
+    if (
+      targetResolved !== baseResolved &&
+      !targetResolved.startsWith(baseResolved + path.sep)
+    ) {
+      throw new Error("Access outside allowed directory");
+    }
+
+    filePath = targetResolved;
+  } catch (e) {
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "text/plain",
+          text: `Invalid file URI: ${e instanceof Error ? e.message : String(e)}`,
+        },
+      ],
+    };
+  }
 
   try {
     const content = await fs.readFile(filePath, "utf-8");

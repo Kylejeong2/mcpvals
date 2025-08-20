@@ -91,13 +91,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
+  // Minimal runtime validation for demo safety
+  const num = (v) => {
+    const n = Number(v);
+    if (Number.isNaN(n)) throw new Error("invalid number");
+    return n;
+  };
+
   switch (name) {
     case "add":
       return {
         content: [
           {
             type: "text",
-            text: String(args.a + args.b),
+            text: String(num(args.a) + num(args.b)),
           },
         ],
       };
@@ -107,7 +114,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: "text",
-            text: String(args.a - args.b),
+            text: String(num(args.a) - num(args.b)),
           },
         ],
       };
@@ -117,20 +124,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: "text",
-            text: String(args.a * args.b),
+            text: String(num(args.a) * num(args.b)),
           },
         ],
       };
 
     case "divide":
-      if (args.b === 0) {
+      if (num(args.b) === 0) {
         throw new Error("division by zero");
       }
       return {
         content: [
           {
             type: "text",
-            text: String(args.a / args.b),
+            text: String(num(args.a) / num(args.b)),
           },
         ],
       };
