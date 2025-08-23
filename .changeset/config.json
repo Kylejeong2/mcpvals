@@ -9,7 +9,7 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "mcpvals/mcpvals"
+      "repo": "Kylejeong2/mcpvals"
     }
   ],
   "snapshot": {
