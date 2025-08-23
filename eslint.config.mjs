@@ -16,6 +16,10 @@ export default [
       "**/*.yaml",
       "**/*.md",
       ".github/**/*",
+      "docs-website/.next/**/*",
+      "docs-website/node_modules/**/*",
+      "docs-website/next-env.d.ts",
+      "docs-website/pnpm-lock.yaml",
     ],
   },
   {

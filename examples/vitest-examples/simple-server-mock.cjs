@@ -168,7 +168,7 @@ function main() {
           if (
             typeof message !== "object" ||
             message === null ||
-            ("__proto__" in message) ||
+            "__proto__" in message ||
             ("constructor" in message &&
               message.constructor &&
               message.constructor !== Object)

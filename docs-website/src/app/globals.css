@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  /* Prose customizations for documentation */
+  .prose {
+    @apply text-zinc-800 dark:text-zinc-200;
+  }
+
+  .prose h1 {
+    @apply text-3xl font-bold text-zinc-900 dark:text-white border-b border-zinc-200 dark:border-zinc-800 pb-2;
+  }
+
+  .prose h2 {
+    @apply text-2xl font-semibold text-zinc-900 dark:text-white mt-8 mb-4;
+  }
+
+  .prose h3 {
+    @apply text-xl font-semibold text-zinc-900 dark:text-white mt-6 mb-3;
+  }
+
+  .prose h4 {
+    @apply text-lg font-medium text-zinc-900 dark:text-white mt-4 mb-2;
+  }
+
+  .prose a {
+    @apply text-indigo-600 dark:text-indigo-400 no-underline hover:underline;
+  }
+
+  .prose code {
+    @apply rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-sm font-mono text-zinc-800 dark:text-zinc-200;
+  }
+
+  .prose pre {
+    @apply rounded-lg bg-zinc-900 dark:bg-zinc-950 p-4 overflow-x-auto my-4;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0 text-zinc-100 dark:text-zinc-200;
+    white-space: pre;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-indigo-500 pl-4 italic text-zinc-600 dark:text-zinc-400 my-4;
+  }
+
+  .prose ul {
+    @apply list-disc pl-6 space-y-2;
+  }
+
+  .prose ol {
+    @apply list-decimal pl-6 space-y-2;
+  }
+
+  .prose li {
+    @apply text-zinc-700 dark:text-zinc-300;
+  }
+
+  .prose table {
+    @apply w-full border-collapse my-6;
+  }
+
+  .prose th {
+    @apply border-b-2 border-zinc-200 dark:border-zinc-700 px-4 py-2 text-left font-semibold text-zinc-900 dark:text-white;
+  }
+
+  .prose td {
+    @apply border-b border-zinc-200 dark:border-zinc-800 px-4 py-2 text-zinc-700 dark:text-zinc-300;
+  }
+
+  .prose hr {
+    @apply border-zinc-200 dark:border-zinc-800 my-8;
+  }
+
+  .prose img {
+    @apply rounded-lg my-6;
+  }
+}
