@@ -20,11 +20,11 @@ Evaluation options:
   --workflows-only         Run only workflows, skip other test types
 ```
 
-### 3.1 `eval`
+### `eval`
 
 Runs tests specified in the config file. It will run all configured test types (`toolHealthSuites`, `resourceSuites`, `promptSuites`, `samplingSuites`, and `workflows`) by default. Use flags to run only specific types. Exits **0** on success or **1** on any failure – perfect for CI.
 
-### 3.2 `list`
+### `list`
 
 Static inspection – prints workflows without starting the server. Handy when iterating on test coverage.
 

@@ -2,7 +2,7 @@
 
 MCPVals loads **either** a `.json` file **or** a `.ts/.js` module that `export default` an object. Any string value in the config supports **Bash-style environment variable interpolation** `${VAR}`.
 
-### 4.1 `server`
+### `server`
 
 Defines how to connect to your MCP server.
 
@@ -46,7 +46,7 @@ Defines how to connect to your MCP server.
 }
 ```
 
-### 4.2 `toolHealthSuites[]`
+### `toolHealthSuites[]`
 
 An array of suites for testing tools directly. Each suite contains:
 
@@ -67,7 +67,7 @@ An array of suites for testing tools directly. Each suite contains:
 | `maxLatency`     | `number`? | Maximum acceptable latency in milliseconds.                            |
 | `retries`        | `number`? | Retries on failure (0-5, default: 0).                                  |
 
-### 4.3 `resourceSuites[]`
+### `resourceSuites[]`
 
 An array of suites for testing MCP resources. Each suite contains:
 
@@ -125,7 +125,7 @@ An array of suites for testing MCP resources. Each suite contains:
 }
 ```
 
-### 4.4 `promptSuites[]`
+### `promptSuites[]`
 
 An array of suites for testing MCP prompts. Each suite contains:
 
@@ -186,7 +186,7 @@ An array of suites for testing MCP prompts. Each suite contains:
 }
 ```
 
-### 4.5 `samplingSuites[]`
+### `samplingSuites[]`
 
 An array of suites for testing MCP sampling capabilities. Each suite contains:
 
@@ -247,7 +247,7 @@ An array of suites for testing MCP sampling capabilities. Each suite contains:
 }
 ```
 
-### 4.6 `oauth2Suites[]`
+### `oauth2Suites[]`
 
 An array of suites for testing OAuth 2.1 authentication flows. Each suite contains comprehensive tests for modern OAuth 2.1 security practices including PKCE, resource indicators, and multi-tenant support.
 
@@ -362,7 +362,7 @@ An array of suites for testing OAuth 2.1 authentication flows. Each suite contai
 }
 ```
 
-### 4.7 `workflows[]`
+### `workflows[]`
 
 An array of LLM-driven test workflows. Each workflow contains:
 
@@ -382,7 +382,7 @@ An array of LLM-driven test workflows. Each workflow contains:
 1.  **Write natural prompts**: Instead of micro-managing tool calls, give the LLM a complete task (e.g., "Book a flight from SF to NY for next Tuesday and then find a hotel near the airport.").
 2.  **Use workflow-level `expectTools`**: List all tools you expect to be used across the entire workflow to verify the LLM's plan.
 
-### 4.8 Global Options
+### Global Options
 
 - `timeout`: (number) Global timeout in ms for server startup and individual tool calls. Default: `30000`.
 - `llmJudge`: (boolean) Enables the LLM Judge feature. Default: `false`.

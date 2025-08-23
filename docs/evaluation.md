@@ -1,6 +1,6 @@
 # Evaluation & Metrics
 
-### 5.1 Tool Health Metrics
+### Tool Health Metrics
 
 When running tool health tests, the following is assessed for each test:
 
@@ -9,7 +9,7 @@ When running tool health tests, the following is assessed for each test:
 - **Latency**: Did the tool respond within `maxLatency`?
 - **Success**: Did the tool call complete without unexpected errors?
 
-### 5.2 Resource Evaluation Metrics
+### Resource Evaluation Metrics
 
 For resource tests, the following is assessed:
 
@@ -19,7 +19,7 @@ For resource tests, the following is assessed:
 - **Subscription Metrics**: Update notification handling, subscription lifecycle management
 - **Performance Metrics**: Response latency, retry success rates
 
-### 5.3 Prompt Evaluation Metrics
+### Prompt Evaluation Metrics
 
 For prompt tests, the following is assessed:
 
@@ -29,7 +29,7 @@ For prompt tests, the following is assessed:
 - **Template Metrics**: Dynamic content generation, parameter substitution
 - **Security Metrics**: Injection prevention, input sanitization effectiveness
 
-### 5.4 Sampling Evaluation Metrics
+### Sampling Evaluation Metrics
 
 For sampling tests, the following is assessed:
 
@@ -39,7 +39,7 @@ For sampling tests, the following is assessed:
 - **Performance Metrics**: Concurrent request handling, rate limiting, latency management
 - **Content Metrics**: Text/image/mixed content validation, format handling
 
-### 5.5 OAuth 2.1 Evaluation Metrics
+### OAuth 2.1 Evaluation Metrics
 
 For OAuth 2.1 authentication tests, the following is assessed:
 
@@ -51,7 +51,7 @@ For OAuth 2.1 authentication tests, the following is assessed:
 - **Resource Indicator Metrics**: RFC 8707 compliance, audience restriction, scope validation
 - **Performance Metrics**: Token endpoint latency, authorization flow completion time, concurrent request handling
 
-### 5.6 Workflow Metrics (Deterministic)
+### Workflow Metrics (Deterministic)
 
 For each workflow, a trace of the LLM interaction is recorded and evaluated against 3 metrics:
 
@@ -63,7 +63,7 @@ For each workflow, a trace of the LLM interaction is recorded and evaluated agai
 
 The overall score is an arithmetic mean. The **evaluation fails** if _any_ metric fails.
 
-### 5.7 LLM Judge (Optional)
+### LLM Judge (Optional)
 
 Add subjective grading when deterministic checks are not enough (e.g., checking tone, or conversational quality).
 

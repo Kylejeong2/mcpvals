@@ -16,7 +16,7 @@ if (!report.passed) {
 }
 ```
 
-### 7.1 Re-exported Types
+### Re-exported Types
 
 The library exports all configuration and result types for use in TypeScript projects:
 

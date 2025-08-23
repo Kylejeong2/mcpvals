@@ -2,7 +2,7 @@
 
 MCPVals provides a complete **Vitest integration** for writing MCP server tests using the popular Vitest testing framework. This integration offers both individual test utilities and comprehensive evaluation suites with built-in scoring and custom matchers.
 
-### 7.1 Quick Start
+### Quick Start
 
 ```bash
 # Install vitest alongside mcpvals
@@ -47,7 +47,7 @@ describe("Calculator MCP Server", () => {
 });
 ```
 
-### 7.2 Core Functions
+### Core Functions
 
 #### **`setupMCPServer(config, options?)`**
 
@@ -131,7 +131,7 @@ describeEval({
 });
 ```
 
-### 7.3 Built-in Scorers
+### Built-in Scorers
 
 Scorers automatically evaluate different aspects of MCP server behavior, returning scores from 0-1.
 
@@ -196,7 +196,7 @@ new ContentScorer({
 - -20% forbidden keywords penalty
 - 20% content relevance
 
-### 7.4 Custom Matchers
+### Custom Matchers
 
 MCPVals extends Vitest with MCP-specific assertion matchers:
 
@@ -224,7 +224,7 @@ await expect(result).toMatchPattern(/result: \d+/);
 - String outputs
 - Workflow results (`{ success, messages, toolCalls }`)
 
-### 7.5 TypeScript Support
+### TypeScript Support
 
 Complete type safety with concrete types for common use cases:
 
@@ -269,7 +269,7 @@ task: async (input, context): Promise<MCPToolResult> => {
 };
 ```
 
-### 7.6 Advanced Usage
+### Advanced Usage
 
 #### **Dynamic Test Generation**
 
@@ -321,7 +321,7 @@ VITEST_MCP_DEBUG=true vitest run
 # - Server lifecycle events
 ```
 
-### 7.7 Integration Patterns
+### Integration Patterns
 
 #### **Unit Testing Individual Tools**
 
@@ -409,7 +409,7 @@ describe("Multi-Server Comparison", () => {
 });
 ```
 
-### 7.8 Best Practices
+### Best Practices
 
 1. **Use `beforeAll`/`afterAll`**: Always properly setup and teardown MCP servers
 2. **Leverage TypeScript**: Use concrete types for better development experience
@@ -420,7 +420,7 @@ describe("Multi-Server Comparison", () => {
 7. **Write realistic test data**: Create test cases that reflect real-world usage
 8. **Use custom matchers**: Leverage MCP-specific matchers for readable assertions
 
-### 7.9 Example: Complete Test Suite
+### Example: Complete Test Suite
 
 ```typescript
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
