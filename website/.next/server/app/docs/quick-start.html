@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/css/f25260a5bd2b21c3.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/webpack-879f858537244e02.js"/><script src="/_next/static/chunks/fd9d1056-2821b0f0cabcd8bd.js" async=""></script><script src="/_next/static/chunks/23-fcd997dff58d4f95.js" async=""></script><script src="/_next/static/chunks/main-app-ed9f027efa6787fc.js" async=""></script><script src="/_next/static/chunks/231-bea070b1ecddfbbc.js" async=""></script><script src="/_next/static/chunks/app/docs/layout-b24984ce47656698.js" async=""></script><title>MCPVals Docs</title><meta name="description" content="Documentation for MCPVals"/><script src="/_next/static/chunks/polyfills-78c92fac7aa8fdd8.js" noModule=""></script></head><body class="min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100"><div class="flex"><aside class="w-64 shrink-0 border-r border-zinc-200/60 dark:border-zinc-800/60 p-4 sticky top-0 h-screen overflow-y-auto"><div class="text-lg font-semibold mb-4">MCPVals Docs</div><nav class="space-y-1"><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/index">Core Concepts</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/acknowledgements">Acknowledgements</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/cli">CLI Reference</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/configuration">Configuration</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/evaluation">Evaluation &amp; Metrics</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/installation">Installation &amp; Runtime Requirements</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/library-api">Library API</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/quick-start">Quick Start</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/roadmap">Roadmap</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/vitest">Vitest Integration</a></nav></aside><main class="flex-1 p-6"><article class="prose prose-zinc max-w-none dark:prose-invert"><h1 id="quick-start"><a href="#quick-start">Quick Start</a></h1>
+<h3 id="1-installation"><a href="#1-installation">1. Installation</a></h3>
+<pre><code class="language-bash"># Install – pick your favourite package manager
+pnpm add -D mcpvals            # dev-dependency is typical
+</code></pre>
+<h3 id="2-create-a-config-file"><a href="#2-create-a-config-file">2. Create a config file</a></h3>
+<p>Create a config file (e.g., <code>mcp-eval.config.ts</code>):</p>
+<pre><code class="language-typescript">import type { Config } from &quot;mcpvals&quot;;
+
+export default {
+  server: {
+    transport: &quot;stdio&quot;,
+    command: &quot;node&quot;,
+    args: [&quot;./example/simple-mcp-server.js&quot;],
+  },
+
+  // Test individual tools directly
+  toolHealthSuites: [
+    {
+      name: &quot;Calculator Health Tests&quot;,
+      tests: [
+        {
+          name: &quot;add&quot;,
+          args: { a: 5, b: 3 },
+          expectedResult: 8,
+          maxLatency: 500,
+        },
+        {
+          name: &quot;divide&quot;,
+          args: { a: 10, b: 0 },
+          expectedError: &quot;division by zero&quot;,
+        },
+      ],
+    },
+  ],
+
+  // Test resources (data and context)
+  resourceSuites: [
+    {
+      name: &quot;Data Access Tests&quot;,
+      tests: [
+        {
+          name: &quot;read-config&quot;,
+          uri: &quot;config://settings&quot;,
+          expectedMimeType: &quot;application/json&quot;,
+          maxLatency: 1000,
+        },
+      ],
+    },
+  ],
+
+  // Test prompts (templates and workflows)
+  promptSuites: [
+    {
+      name: &quot;Prompt Template Tests&quot;,
+      tests: [
+        {
+          name: &quot;user-greeting&quot;,
+          args: { name: &quot;Alice&quot;, role: &quot;admin&quot; },
+          expectedContent: [&quot;Welcome&quot;, &quot;Alice&quot;],
+        },
+      ],
+    },
+  ],
+
+  // Test sampling (LLM requests from server)
+  samplingSuites: [
+    {
+      name: &quot;AI Capability Tests&quot;,
+      capabilityTests: [
+        {
+          name: &quot;sampling-supported&quot;,
+          expectedCapability: true,
+        },
+      ],
+    },
+  ],
+
+  // Test OAuth 2.1 authentication flows
+  oauth2Suites: [
+    {
+      name: &quot;OAuth Security Tests&quot;,
+      authorizationCodeTests: [
+        {
+          name: &quot;Authorization Code with PKCE&quot;,
+          flow: &quot;authorization_code&quot;,
+          server: {
+            authorizationEndpoint: &quot;https://auth.example.com/authorize&quot;,
+            tokenEndpoint: &quot;https://auth.example.com/token&quot;,
+            supportedGrantTypes: [&quot;authorization_code&quot;],
+            supportedScopes: [&quot;read&quot;, &quot;write&quot;],
+            pkceRequired: true,
+          },
+          client: {
+            clientId: &quot;test-client-id&quot;,
+            responseType: &quot;code&quot;,
+            scope: [&quot;read&quot;, &quot;write&quot;],
+            redirectUri: &quot;https://app.example.com/callback&quot;,
+            pkce: { enabled: true, codeChallengeMethod: &quot;S256&quot; },
+          },
+          simulateUserConsent: true,
+          expectedResult: &quot;success&quot;,
+        },
+      ],
+    },
+  ],
+
+  // Test multi-step, LLM-driven workflows
+  workflows: [
+    {
+      name: &quot;Multi-step Calculation&quot;,
+      steps: [
+        {
+          user: &quot;Calculate (5 + 3) * 2, then divide by 4&quot;,
+          expectedState: &quot;4&quot;,
+        },
+      ],
+      expectTools: [&quot;add&quot;, &quot;multiply&quot;, &quot;divide&quot;],
+    },
+  ],
+
+  // Optional LLM judge
+  llmJudge: true,
+  openaiKey: process.env.OPENAI_API_KEY,
+  passThreshold: 0.8,
+} satisfies Config;
+</code></pre>
+<h3 id="3-run-evaluation"><a href="#3-run-evaluation">3. Run Evaluation</a></h3>
+<pre><code class="language-bash"># Required for workflow execution
+export ANTHROPIC_API_KEY=&quot;sk-ant-...&quot;
+
+# Optional for LLM judge
+export OPENAI_API_KEY=&quot;sk-...&quot;
+
+# Run everything
+npx mcpvals eval mcp-eval.config.ts
+
+# Run only tool health tests
+npx mcpvals eval mcp-eval.config.ts --tool-health-only
+
+# Run only resource evaluation tests
+npx mcpvals eval mcp-eval.config.ts --resources-only
+
+# Run only prompt evaluation tests
+npx mcpvals eval mcp-eval.config.ts --prompts-only
+
+# Run only sampling evaluation tests
+npx mcpvals eval mcp-eval.config.ts --sampling-only
+
+# Run only OAuth 2.1 authentication tests
+npx mcpvals eval mcp-eval.config.ts --oauth-only
+
+# Run with LLM judge and save report
+npx mcpvals eval mcp-eval.config.ts --llm-judge --reporter json &gt; report.json
+</code></pre>
+<hr/></article></main></div><script src="/_next/static/chunks/webpack-879f858537244e02.js" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0]);self.__next_f.push([2,null])</script><script>self.__next_f.push([1,"1:HL[\"/_next/static/css/f25260a5bd2b21c3.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"2:I[5751,[],\"\"]\n5:I[9275,[],\"\"]\n7:I[1343,[],\"\"]\n8:I[231,[\"231\",\"static/chunks/231-bea070b1ecddfbbc.js\",\"998\",\"static/chunks/app/docs/layout-b24984ce47656698.js\"],\"\"]\na:I[6130,[],\"\"]\n4:Tab6,"])</script><script>self.__next_f.push([1,"import type { Config } from \"mcpvals\";\n\nexport default {\n  server: {\n    transport: \"stdio\",\n    command: \"node\",\n    args: [\"./example/simple-mcp-server.js\"],\n  },\n\n  // Test individual tools directly\n  toolHealthSuites: [\n    {\n      name: \"Calculator Health Tests\",\n      tests: [\n        {\n          name: \"add\",\n          args: { a: 5, b: 3 },\n          expectedResult: 8,\n          maxLatency: 500,\n        },\n        {\n          name: \"divide\",\n          args: { a: 10, b: 0 },\n          expectedError: \"division by zero\",\n        },\n      ],\n    },\n  ],\n\n  // Test resources (data and context)\n  resourceSuites: [\n    {\n      name: \"Data Access Tests\",\n      tests: [\n        {\n          name: \"read-config\",\n          uri: \"config://settings\",\n          expectedMimeType: \"application/json\",\n          maxLatency: 1000,\n        },\n      ],\n    },\n  ],\n\n  // Test prompts (templates and workflows)\n  promptSuites: [\n    {\n      name: \"Prompt Template Tests\",\n      tests: [\n        {\n          name: \"user-greeting\",\n          args: { name: \"Alice\", role: \"admin\" },\n          expectedContent: [\"Welcome\", \"Alice\"],\n        },\n      ],\n    },\n  ],\n\n  // Test sampling (LLM requests from server)\n  samplingSuites: [\n    {\n      name: \"AI Capability Tests\",\n      capabilityTests: [\n        {\n          name: \"sampling-supported\",\n          expectedCapability: true,\n        },\n      ],\n    },\n  ],\n\n  // Test OAuth 2.1 authentication flows\n  oauth2Suites: [\n    {\n      name: \"OAuth Security Tests\",\n      authorizationCodeTests: [\n        {\n          name: \"Authorization Code with PKCE\",\n          flow: \"authorization_code\",\n          server: {\n            authorizationEndpoint: \"https://auth.example.com/authorize\",\n            tokenEndpoint: \"https://auth.example.com/token\",\n            supportedGrantTypes: [\"authorization_code\"],\n            supportedScopes: [\"read\", \"write\"],\n            pkceRequired: true,\n          },\n          client: {\n            clientId: \"test-client-id\",\n            responseType: \"code\",\n            scope: [\"read\", \"write\"],\n            redirectUri: \"https://app.example.com/callback\",\n            pkce: { enabled: true, codeChallengeMethod: \"S256\" },\n          },\n          simulateUserConsent: true,\n          expectedResult: \"success\",\n        },\n      ],\n    },\n  ],\n\n  // Test multi-step, LLM-driven workflows\n  workflows: [\n    {\n      name: \"Multi-step Calculation\",\n      steps: [\n        {\n          user: \"Calculate (5 + 3) * 2, then divide by 4\",\n          expectedState: \"4\",\n        },\n      ],\n      expectTools: [\"add\", \"multiply\", \"divide\"],\n    },\n  ],\n\n  // Optional LLM judge\n  llmJudge: true,\n  openaiKey: process.env.OPENAI_API_KEY,\n  passThreshold: 0.8,\n} satisfies Config;\n"])</script><script>self.__next_f.push([1,"6:[\"slug\",\"quick-start\",\"c\"]\nb:[]\n"])</script><script>self.__next_f.push([1,"0:[\"$\",\"$L2\",null,{\"buildId\":\"mtG3UlcSqFkfpBd0gWDhs\",\"assetPrefix\":\"\",\"urlParts\":[\"\",\"docs\",\"quick-start\"],\"initialTree\":[\"\",{\"children\":[\"docs\",{\"children\":[[\"slug\",\"quick-start\",\"c\"],{\"children\":[\"__PAGE__?{\\\"slug\\\":[\\\"quick-start\\\"]}\",{}]}]}]},\"$undefined\",\"$undefined\",true],\"initialSeedData\":[\"\",{\"children\":[\"docs\",{\"children\":[[\"slug\",\"quick-start\",\"c\"],{\"children\":[\"__PAGE__\",{},[[\"$L3\",[\"$\",\"article\",null,{\"className\":\"prose prose-zinc max-w-none dark:prose-invert\",\"children\":[[\"$\",\"h1\",\"h1-0\",{\"id\":\"quick-start\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#quick-start\",\"children\":\"Quick Start\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-0\",{\"id\":\"1-installation\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#1-installation\",\"children\":\"1. Installation\"}]}],\"\\n\",[\"$\",\"pre\",\"pre-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-bash\",\"children\":\"# Install – pick your favourite package manager\\npnpm add -D mcpvals            # dev-dependency is typical\\n\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-1\",{\"id\":\"2-create-a-config-file\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#2-create-a-config-file\",\"children\":\"2. Create a config file\"}]}],\"\\n\",[\"$\",\"p\",\"p-0\",{\"children\":[\"Create a config file (e.g., \",[\"$\",\"code\",\"code-0\",{\"children\":\"mcp-eval.config.ts\"}],\"):\"]}],\"\\n\",[\"$\",\"pre\",\"pre-1\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"$4\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-2\",{\"id\":\"3-run-evaluation\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#3-run-evaluation\",\"children\":\"3. Run Evaluation\"}]}],\"\\n\",[\"$\",\"pre\",\"pre-2\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-bash\",\"children\":\"# Required for workflow execution\\nexport ANTHROPIC_API_KEY=\\\"sk-ant-...\\\"\\n\\n# Optional for LLM judge\\nexport OPENAI_API_KEY=\\\"sk-...\\\"\\n\\n# Run everything\\nnpx mcpvals eval mcp-eval.config.ts\\n\\n# Run only tool health tests\\nnpx mcpvals eval mcp-eval.config.ts --tool-health-only\\n\\n# Run only resource evaluation tests\\nnpx mcpvals eval mcp-eval.config.ts --resources-only\\n\\n# Run only prompt evaluation tests\\nnpx mcpvals eval mcp-eval.config.ts --prompts-only\\n\\n# Run only sampling evaluation tests\\nnpx mcpvals eval mcp-eval.config.ts --sampling-only\\n\\n# Run only OAuth 2.1 authentication tests\\nnpx mcpvals eval mcp-eval.config.ts --oauth-only\\n\\n# Run with LLM judge and save report\\nnpx mcpvals eval mcp-eval.config.ts --llm-judge --reporter json \u003e report.json\\n\"}]}],\"\\n\",[\"$\",\"hr\",\"hr-0\",{}]]}],null],null],null]},[null,[\"$\",\"$L5\",null,{\"parallelRouterKey\":\"children\",\"segmentPath\":[\"children\",\"docs\",\"children\",\"$6\",\"children\"],\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L7\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"notFoundStyles\":\"$undefined\"}]],null]},[[null,[\"$\",\"div\",null,{\"className\":\"flex\",\"children\":[[\"$\",\"aside\",null,{\"className\":\"w-64 shrink-0 border-r border-zinc-200/60 dark:border-zinc-800/60 p-4 sticky top-0 h-screen overflow-y-auto\",\"children\":[[\"$\",\"div\",null,{\"className\":\"text-lg font-semibold mb-4\",\"children\":\"MCPVals Docs\"}],[\"$\",\"nav\",null,{\"className\":\"space-y-1\",\"children\":[[\"$\",\"$L8\",\"/workspace/website/content/index.md\",{\"href\":\"/docs/index\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Core Concepts\"}],[\"$\",\"$L8\",\"/workspace/website/content/acknowledgements.md\",{\"href\":\"/docs/acknowledgements\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Acknowledgements\"}],[\"$\",\"$L8\",\"/workspace/website/content/cli.md\",{\"href\":\"/docs/cli\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"CLI Reference\"}],[\"$\",\"$L8\",\"/workspace/website/content/configuration.md\",{\"href\":\"/docs/configuration\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Configuration\"}],[\"$\",\"$L8\",\"/workspace/website/content/evaluation.md\",{\"href\":\"/docs/evaluation\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Evaluation \u0026 Metrics\"}],[\"$\",\"$L8\",\"/workspace/website/content/installation.md\",{\"href\":\"/docs/installation\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Installation \u0026 Runtime Requirements\"}],[\"$\",\"$L8\",\"/workspace/website/content/library-api.md\",{\"href\":\"/docs/library-api\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Library API\"}],[\"$\",\"$L8\",\"/workspace/website/content/quick-start.md\",{\"href\":\"/docs/quick-start\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Quick Start\"}],[\"$\",\"$L8\",\"/workspace/website/content/roadmap.md\",{\"href\":\"/docs/roadmap\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Roadmap\"}],[\"$\",\"$L8\",\"/workspace/website/content/vitest.md\",{\"href\":\"/docs/vitest\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Vitest Integration\"}]]}]]}],[\"$\",\"main\",null,{\"className\":\"flex-1 p-6\",\"children\":[\"$\",\"$L5\",null,{\"parallelRouterKey\":\"children\",\"segmentPath\":[\"children\",\"docs\",\"children\"],\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L7\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"notFoundStyles\":\"$undefined\"}]}]]}]],null],null]},[[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/css/f25260a5bd2b21c3.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"children\":[\"$\",\"body\",null,{\"className\":\"min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100\",\"children\":[\"$\",\"$L5\",null,{\"parallelRouterKey\":\"children\",\"segmentPath\":[\"children\"],\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L7\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":\"404\"}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],\"notFoundStyles\":[]}]}]}]],null],null],\"couldBeIntercepted\":false,\"initialHead\":[null,\"$L9\"],\"globalErrorComponent\":\"$a\",\"missingSlots\":\"$Wb\"}]\n"])</script><script>self.__next_f.push([1,"9:[[\"$\",\"meta\",\"0\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}],[\"$\",\"meta\",\"1\",{\"charSet\":\"utf-8\"}],[\"$\",\"title\",\"2\",{\"children\":\"MCPVals Docs\"}],[\"$\",\"meta\",\"3\",{\"name\":\"description\",\"content\":\"Documentation for MCPVals\"}]]\n3:null\n"])</script></body></html>

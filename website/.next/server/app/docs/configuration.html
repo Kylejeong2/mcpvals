@@ -1,0 +1,308 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/css/f25260a5bd2b21c3.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/webpack-879f858537244e02.js"/><script src="/_next/static/chunks/fd9d1056-2821b0f0cabcd8bd.js" async=""></script><script src="/_next/static/chunks/23-fcd997dff58d4f95.js" async=""></script><script src="/_next/static/chunks/main-app-ed9f027efa6787fc.js" async=""></script><script src="/_next/static/chunks/231-bea070b1ecddfbbc.js" async=""></script><script src="/_next/static/chunks/app/docs/layout-b24984ce47656698.js" async=""></script><title>MCPVals Docs</title><meta name="description" content="Documentation for MCPVals"/><script src="/_next/static/chunks/polyfills-78c92fac7aa8fdd8.js" noModule=""></script></head><body class="min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100"><div class="flex"><aside class="w-64 shrink-0 border-r border-zinc-200/60 dark:border-zinc-800/60 p-4 sticky top-0 h-screen overflow-y-auto"><div class="text-lg font-semibold mb-4">MCPVals Docs</div><nav class="space-y-1"><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/index">Core Concepts</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/acknowledgements">Acknowledgements</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/cli">CLI Reference</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/configuration">Configuration</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/evaluation">Evaluation &amp; Metrics</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/installation">Installation &amp; Runtime Requirements</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/library-api">Library API</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/quick-start">Quick Start</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/roadmap">Roadmap</a><a class="block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900" href="/docs/vitest">Vitest Integration</a></nav></aside><main class="flex-1 p-6"><article class="prose prose-zinc max-w-none dark:prose-invert"><h1 id="configuration"><a href="#configuration">Configuration</a></h1>
+<p>MCPVals loads <strong>either</strong> a <code>.json</code> file <strong>or</strong> a <code>.ts/.js</code> module that <code>export default</code> an object. Any string value in the config supports <strong>Bash-style environment variable interpolation</strong> <code>${VAR}</code>.</p>
+<h3 id="41-server"><a href="#41-server">4.1 <code>server</code></a></h3>
+<p>Defines how to connect to your MCP server.</p>
+<ul>
+<li><code>transport</code>: <code>stdio</code>, <code>shttp</code> (Streaming HTTP), or <code>sse</code> (Server-Sent Events).</li>
+<li><code>command</code>/<code>args</code>: (for <code>stdio</code>) The command to execute your server.</li>
+<li><code>env</code>: (for <code>stdio</code>) Environment variables to set for the child process.</li>
+<li><code>url</code>/<code>headers</code>: (for <code>shttp</code> and <code>sse</code>) The endpoint and headers for a remote server.</li>
+<li><code>reconnect</code>/<code>reconnectInterval</code>/<code>maxReconnectAttempts</code>: (for <code>sse</code>) Reconnection settings for SSE connections.</li>
+</ul>
+<p><strong>Example <code>shttp</code> with Authentication:</strong></p>
+<pre><code class="language-json">{
+  &quot;server&quot;: {
+    &quot;transport&quot;: &quot;shttp&quot;,
+    &quot;url&quot;: &quot;https://api.example.com/mcp&quot;,
+    &quot;headers&quot;: {
+      &quot;Authorization&quot;: &quot;Bearer ${API_TOKEN}&quot;,
+      &quot;X-API-Key&quot;: &quot;${API_KEY}&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>Example <code>sse</code> with Reconnection:</strong></p>
+<pre><code class="language-json">{
+  &quot;server&quot;: {
+    &quot;transport&quot;: &quot;sse&quot;,
+    &quot;url&quot;: &quot;https://api.example.com/mcp/sse&quot;,
+    &quot;headers&quot;: {
+      &quot;Accept&quot;: &quot;text/event-stream&quot;,
+      &quot;Cache-Control&quot;: &quot;no-cache&quot;,
+      &quot;Authorization&quot;: &quot;Bearer ${API_TOKEN}&quot;
+    },
+    &quot;reconnect&quot;: true,
+    &quot;reconnectInterval&quot;: 5000,
+    &quot;maxReconnectAttempts&quot;: 10
+  }
+}
+</code></pre>
+<h3 id="42-toolhealthsuites"><a href="#42-toolhealthsuites">4.2 <code>toolHealthSuites[]</code></a></h3>
+<p>An array of suites for testing tools directly. Each suite contains:</p>
+<ul>
+<li><code>name</code>: Identifier for the test suite.</li>
+<li><code>tests</code>: An array of individual tool tests.</li>
+<li><code>parallel</code>: (boolean) Whether to run tests in the suite in parallel (default: <code>false</code>).</li>
+<li><code>timeout</code>: (number) Override the global timeout for this suite.</li>
+</ul>
+<h4 id="tool-test-schema"><a href="#tool-test-schema">Tool Test Schema</a></h4>
+<table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>name</code></td><td><code>string</code></td><td>Tool name to test (must match an available MCP tool).</td></tr><tr><td><code>description</code></td><td><code>string</code>?</td><td>What this test validates.</td></tr><tr><td><code>args</code></td><td><code>object</code></td><td>Arguments to pass to the tool.</td></tr><tr><td><code>expectedResult</code></td><td><code>any</code>?</td><td>Expected result. Uses deep equality for objects, contains for strings.</td></tr><tr><td><code>expectedError</code></td><td><code>string</code>?</td><td>Expected error message if the tool should fail.</td></tr><tr><td><code>maxLatency</code></td><td><code>number</code>?</td><td>Maximum acceptable latency in milliseconds.</td></tr><tr><td><code>retries</code></td><td><code>number</code>?</td><td>Retries on failure (0-5, default: 0).</td></tr></tbody></table>
+<h3 id="43-resourcesuites"><a href="#43-resourcesuites">4.3 <code>resourceSuites[]</code></a></h3>
+<p>An array of suites for testing MCP resources. Each suite contains:</p>
+<ul>
+<li><code>name</code>: Identifier for the resource test suite.</li>
+<li><code>discoveryTests</code>: Tests for resource discovery and enumeration.</li>
+<li><code>tests</code>: Resource access and content validation tests.</li>
+<li><code>templateTests</code>: URI template instantiation tests.</li>
+<li><code>subscriptionTests</code>: Resource subscription and update tests.</li>
+<li><code>parallel</code>: (boolean) Whether to run tests in parallel (default: <code>false</code>).</li>
+<li><code>timeout</code>: (number) Override the global timeout for this suite.</li>
+</ul>
+<h4 id="resource-test-types"><a href="#resource-test-types">Resource Test Types</a></h4>
+<p><strong>Discovery Tests</strong>: Validate <code>listResources</code> functionality</p>
+<pre><code class="language-typescript">{
+  name: &quot;resource-discovery&quot;,
+  expectedCount: { min: 1, max: 10 }, // Optional count validation
+  expectedResources: [&quot;config&quot;, &quot;data&quot;], // Must include these resources
+}
+</code></pre>
+<p><strong>Resource Access Tests</strong>: Validate <code>readResource</code> operations</p>
+<pre><code class="language-typescript">{
+  name: &quot;read-config&quot;,
+  uri: &quot;config://settings.json&quot;,
+  expectedMimeType: &quot;application/json&quot;,
+  expectedContent: { &quot;version&quot;: &quot;1.0&quot; }, // Partial object match
+  maxLatency: 500,
+}
+</code></pre>
+<p><strong>Template Tests</strong>: Validate URI template instantiation</p>
+<pre><code class="language-typescript">{
+  name: &quot;user-template&quot;,
+  template: &quot;user://{userId}&quot;,
+  arguments: { userId: &quot;123&quot; },
+  expectedUri: &quot;user://123&quot;,
+}
+</code></pre>
+<p><strong>Subscription Tests</strong>: Validate resource update subscriptions</p>
+<pre><code class="language-typescript">{
+  name: &quot;config-updates&quot;,
+  resourceUri: &quot;config://settings.json&quot;,
+  expectUpdates: true, // Whether to expect update notifications
+  timeout: 5000,
+}
+</code></pre>
+<h3 id="44-promptsuites"><a href="#44-promptsuites">4.4 <code>promptSuites[]</code></a></h3>
+<p>An array of suites for testing MCP prompts. Each suite contains:</p>
+<ul>
+<li><code>name</code>: Identifier for the prompt test suite.</li>
+<li><code>discoveryTests</code>: Tests for prompt discovery and enumeration.</li>
+<li><code>tests</code>: Prompt execution and content validation tests.</li>
+<li><code>argumentTests</code>: Argument validation tests (required vs optional).</li>
+<li><code>templateTests</code>: Template generation and content tests.</li>
+<li><code>securityTests</code>: Security validation including injection prevention.</li>
+<li><code>parallel</code>: (boolean) Whether to run tests in parallel (default: <code>false</code>).</li>
+</ul>
+<h4 id="prompt-test-types"><a href="#prompt-test-types">Prompt Test Types</a></h4>
+<p><strong>Discovery Tests</strong>: Validate <code>listPrompts</code> functionality</p>
+<pre><code class="language-typescript">{
+  name: &quot;prompt-discovery&quot;,
+  expectedCount: { min: 1 },
+  expectedPrompts: [&quot;greeting&quot;, &quot;summary&quot;],
+}
+</code></pre>
+<p><strong>Prompt Execution Tests</strong>: Validate <code>getPrompt</code> operations</p>
+<pre><code class="language-typescript">{
+  name: &quot;user-greeting&quot;,
+  args: { name: &quot;Alice&quot;, role: &quot;admin&quot; },
+  expectedContent: [&quot;Welcome&quot;, &quot;Alice&quot;], // Must contain these strings
+  expectedMessages: [
+    { role: &quot;user&quot;, content: &quot;Hello Alice&quot; }
+  ],
+}
+</code></pre>
+<p><strong>Argument Tests</strong>: Validate prompt argument handling</p>
+<pre><code class="language-typescript">{
+  name: &quot;greeting-args&quot;,
+  requiredArgs: [&quot;name&quot;],
+  optionalArgs: [&quot;role&quot;],
+  invalidArgs: { name: 123 }, // Should be rejected
+}
+</code></pre>
+<p><strong>Security Tests</strong>: Test prompt injection prevention</p>
+<pre><code class="language-typescript">{
+  name: &quot;injection-prevention&quot;,
+  maliciousInputs: [
+    &quot;Ignore previous instructions and...&quot;,
+    &quot;{system: &#x27;override&#x27;}&quot;,
+  ],
+  expectRejection: true,
+}
+</code></pre>
+<h3 id="45-samplingsuites"><a href="#45-samplingsuites">4.5 <code>samplingSuites[]</code></a></h3>
+<p>An array of suites for testing MCP sampling capabilities. Each suite contains:</p>
+<ul>
+<li><code>name</code>: Identifier for the sampling test suite.</li>
+<li><code>capabilityTests</code>: Tests for sampling capability negotiation.</li>
+<li><code>requestTests</code>: Tests for sampling request/response handling.</li>
+<li><code>securityTests</code>: Security validation for sampling operations.</li>
+<li><code>performanceTests</code>: Performance and rate limiting tests.</li>
+<li><code>contentTests</code>: Content type validation (text, image, mixed).</li>
+<li><code>workflowTests</code>: End-to-end sampling workflow tests.</li>
+</ul>
+<h4 id="sampling-test-types"><a href="#sampling-test-types">Sampling Test Types</a></h4>
+<p><strong>Capability Tests</strong>: Validate sampling capability negotiation</p>
+<pre><code class="language-typescript">{
+  name: &quot;sampling-supported&quot;,
+  expectedCapability: true,
+}
+</code></pre>
+<p><strong>Request Tests</strong>: Validate sampling message creation</p>
+<pre><code class="language-typescript">{
+  name: &quot;text-sampling&quot;,
+  messages: [{ role: &quot;user&quot;, content: { type: &quot;text&quot;, text: &quot;Hello&quot; } }],
+  modelPreferences: { costPriority: 0.8, speedPriority: 0.6 },
+  expectUserApproval: true,
+  simulateUserResponse: &quot;approve&quot;,
+}
+</code></pre>
+<p><strong>Security Tests</strong>: Validate security controls</p>
+<pre><code class="language-typescript">{
+  name: &quot;unauthorized-requests&quot;,
+  unauthorizedRequests: [
+    { messages: [...], expectRejection: true }
+  ],
+  sensitiveDataTests: [
+    { input: &quot;SSN: 123-45-6789&quot;, expectFiltering: true }
+  ],
+}
+</code></pre>
+<p><strong>Performance Tests</strong>: Validate performance and limits</p>
+<pre><code class="language-typescript">{
+  name: &quot;concurrent-requests&quot;,
+  concurrentRequests: 10,
+  messageSize: &quot;large&quot;,
+  expectThrottling: true,
+  maxLatency: 5000,
+}
+</code></pre>
+<h3 id="46-oauth2suites"><a href="#46-oauth2suites">4.6 <code>oauth2Suites[]</code></a></h3>
+<p>An array of suites for testing OAuth 2.1 authentication flows. Each suite contains comprehensive tests for modern OAuth 2.1 security practices including PKCE, resource indicators, and multi-tenant support.</p>
+<ul>
+<li><code>name</code>: Identifier for the OAuth test suite.</li>
+<li><code>description</code>: Optional description of the test suite purpose.</li>
+<li><code>authorizationCodeTests</code>: Authorization code flow tests with PKCE.</li>
+<li><code>clientCredentialsTests</code>: Machine-to-machine authentication tests.</li>
+<li><code>deviceCodeTests</code>: Device authorization flow tests for input-limited devices.</li>
+<li><code>tokenManagementTests</code>: Token refresh, revocation, and expiration tests.</li>
+<li><code>pkceValidationTests</code>: PKCE (Proof Key for Code Exchange) security validation.</li>
+<li><code>resourceIndicatorTests</code>: RFC 8707 resource indicators for audience restriction.</li>
+<li><code>multiTenantTests</code>: Multi-tenant isolation and access control tests.</li>
+<li><code>parallel</code>: (boolean) Whether to run tests in parallel (default: <code>false</code>).</li>
+<li><code>timeout</code>: (number) Override the global timeout for this suite.</li>
+</ul>
+<h4 id="oauth-21-test-types"><a href="#oauth-21-test-types">OAuth 2.1 Test Types</a></h4>
+<p><strong>Authorization Code Flow Tests</strong>: Complete OAuth 2.1 authorization code flow with PKCE</p>
+<pre><code class="language-typescript">{
+  name: &quot;Authorization Code with PKCE&quot;,
+  flow: &quot;authorization_code&quot;,
+  server: {
+    authorizationEndpoint: &quot;https://auth.example.com/authorize&quot;,
+    tokenEndpoint: &quot;https://auth.example.com/token&quot;,
+    supportedGrantTypes: [&quot;authorization_code&quot;],
+    supportedScopes: [&quot;read&quot;, &quot;write&quot;],
+    pkceRequired: true
+  },
+  client: {
+    clientId: &quot;test-client-id&quot;,
+    responseType: &quot;code&quot;,
+    scope: [&quot;read&quot;, &quot;write&quot;],
+    redirectUri: &quot;https://app.example.com/callback&quot;,
+    pkce: {
+      enabled: true,
+      codeChallengeMethod: &quot;S256&quot;
+    }
+  },
+  simulateUserConsent: true,
+  expectedResult: &quot;success&quot;,
+  securityChecks: {
+    validatePKCE: true,
+    validateState: true,
+    checkTokenExpiration: true
+  }
+}
+</code></pre>
+<p><strong>Token Management Tests</strong>: Refresh, revocation, and expiration validation</p>
+<pre><code class="language-typescript">{
+  name: &quot;Token Refresh Test&quot;,
+  testType: &quot;refresh&quot;,
+  token: {
+    accessToken: &quot;your-jwt-token-here&quot;,
+    refreshToken: &quot;refresh-token-example&quot;,
+    tokenType: &quot;Bearer&quot;,
+    expiresIn: 3600,
+    scope: [&quot;read&quot;, &quot;write&quot;]
+  },
+  expectedResult: &quot;success&quot;,
+  validateTokenClaims: true
+}
+</code></pre>
+<p><strong>PKCE Validation Tests</strong>: Security validation for Proof Key for Code Exchange</p>
+<pre><code class="language-typescript">{
+  name: &quot;Valid PKCE S256 Challenge&quot;,
+  codeChallengeMethod: &quot;S256&quot;,
+  invalidChallenge: false,
+  expectedResult: &quot;success&quot;,
+  securityLevel: &quot;high&quot;
+}
+</code></pre>
+<p><strong>Resource Indicator Tests</strong>: RFC 8707 audience restriction validation</p>
+<pre><code class="language-typescript">{
+  name: &quot;Resource-Specific Token&quot;,
+  resourceUri: &quot;https://api.example.com&quot;,
+  requestedScopes: [&quot;api:read&quot;, &quot;api:write&quot;],
+  expectedAudience: &quot;https://api.example.com&quot;,
+  validateAudienceRestriction: true,
+  expectedResult: &quot;success&quot;
+}
+</code></pre>
+<p><strong>Multi-Tenant Tests</strong>: Tenant isolation and cross-tenant access control</p>
+<pre><code class="language-typescript">{
+  name: &quot;Cross-Tenant Access Blocked&quot;,
+  primaryTenant: {
+    tenantId: &quot;tenant-123&quot;,
+    isolationLevel: &quot;strict&quot;,
+    crossTenantAccess: false
+  },
+  secondaryTenant: {
+    tenantId: &quot;tenant-456&quot;,
+    isolationLevel: &quot;strict&quot;,
+    crossTenantAccess: false
+  },
+  testScenario: &quot;cross_tenant_blocked&quot;,
+  expectedResult: &quot;success&quot;,
+  validateTenantIsolation: true
+}
+</code></pre>
+<h3 id="47-workflows"><a href="#47-workflows">4.7 <code>workflows[]</code></a></h3>
+<p>An array of LLM-driven test workflows. Each workflow contains:</p>
+<ul>
+<li><code>name</code>: Identifier for the workflow.</li>
+<li><code>steps</code>: An array of user interactions (usually just one for a high-level goal).</li>
+<li><code>expectTools</code>: An array of tool names expected to be called during the workflow.</li>
+</ul>
+<h4 id="workflow-step-schema"><a href="#workflow-step-schema">Workflow Step Schema</a></h4>
+<table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>user</code></td><td><code>string</code></td><td>High-level user intent. The LLM will plan how to accomplish this.</td></tr><tr><td><code>expectedState</code></td><td><code>string</code>?</td><td>A sub-string the evaluator looks for in the final assistant message or tool result.</td></tr></tbody></table>
+<h4 id="workflow-best-practices"><a href="#workflow-best-practices">Workflow Best Practices</a></h4>
+<ol>
+<li><strong>Write natural prompts</strong>: Instead of micro-managing tool calls, give the LLM a complete task (e.g., &quot;Book a flight from SF to NY for next Tuesday and then find a hotel near the airport.&quot;).</li>
+<li><strong>Use workflow-level <code>expectTools</code></strong>: List all tools you expect to be used across the entire workflow to verify the LLM&#x27;s plan.</li>
+</ol>
+<h3 id="48-global-options"><a href="#48-global-options">4.8 Global Options</a></h3>
+<ul>
+<li><code>timeout</code>: (number) Global timeout in ms for server startup and individual tool calls. Default: <code>30000</code>.</li>
+<li><code>llmJudge</code>: (boolean) Enables the LLM Judge feature. Default: <code>false</code>.</li>
+<li><code>openaiKey</code>: (string) OpenAI API key for the LLM Judge.</li>
+<li><code>judgeModel</code>: (string) The model to use for judging. Default: <code>&quot;gpt-4o&quot;</code>.</li>
+<li><code>passThreshold</code>: (number) The minimum score (0-1) from the LLM Judge to pass. Default: <code>0.8</code>.</li>
+</ul>
+<hr/></article></main></div><script src="/_next/static/chunks/webpack-879f858537244e02.js" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0]);self.__next_f.push([2,null])</script><script>self.__next_f.push([1,"1:HL[\"/_next/static/css/f25260a5bd2b21c3.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"2:I[5751,[],\"\"]\n4:I[9275,[],\"\"]\n6:I[1343,[],\"\"]\n7:I[231,[\"231\",\"static/chunks/231-bea070b1ecddfbbc.js\",\"998\",\"static/chunks/app/docs/layout-b24984ce47656698.js\"],\"\"]\n9:I[6130,[],\"\"]\n5:[\"slug\",\"configuration\",\"c\"]\na:[]\n"])</script><script>self.__next_f.push([1,"0:[\"$\",\"$L2\",null,{\"buildId\":\"mtG3UlcSqFkfpBd0gWDhs\",\"assetPrefix\":\"\",\"urlParts\":[\"\",\"docs\",\"configuration\"],\"initialTree\":[\"\",{\"children\":[\"docs\",{\"children\":[[\"slug\",\"configuration\",\"c\"],{\"children\":[\"__PAGE__?{\\\"slug\\\":[\\\"configuration\\\"]}\",{}]}]}]},\"$undefined\",\"$undefined\",true],\"initialSeedData\":[\"\",{\"children\":[\"docs\",{\"children\":[[\"slug\",\"configuration\",\"c\"],{\"children\":[\"__PAGE__\",{},[[\"$L3\",[\"$\",\"article\",null,{\"className\":\"prose prose-zinc max-w-none dark:prose-invert\",\"children\":[[\"$\",\"h1\",\"h1-0\",{\"id\":\"configuration\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#configuration\",\"children\":\"Configuration\"}]}],\"\\n\",[\"$\",\"p\",\"p-0\",{\"children\":[\"MCPVals loads \",[\"$\",\"strong\",\"strong-0\",{\"children\":\"either\"}],\" a \",[\"$\",\"code\",\"code-0\",{\"children\":\".json\"}],\" file \",[\"$\",\"strong\",\"strong-1\",{\"children\":\"or\"}],\" a \",[\"$\",\"code\",\"code-1\",{\"children\":\".ts/.js\"}],\" module that \",[\"$\",\"code\",\"code-2\",{\"children\":\"export default\"}],\" an object. Any string value in the config supports \",[\"$\",\"strong\",\"strong-2\",{\"children\":\"Bash-style environment variable interpolation\"}],\" \",[\"$\",\"code\",\"code-3\",{\"children\":\"$${VAR}\"}],\".\"]}],\"\\n\",[\"$\",\"h3\",\"h3-0\",{\"id\":\"41-server\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#41-server\",\"children\":[\"4.1 \",[\"$\",\"code\",\"code-0\",{\"children\":\"server\"}]]}]}],\"\\n\",[\"$\",\"p\",\"p-1\",{\"children\":\"Defines how to connect to your MCP server.\"}],\"\\n\",[\"$\",\"ul\",\"ul-0\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"transport\"}],\": \",[\"$\",\"code\",\"code-1\",{\"children\":\"stdio\"}],\", \",[\"$\",\"code\",\"code-2\",{\"children\":\"shttp\"}],\" (Streaming HTTP), or \",[\"$\",\"code\",\"code-3\",{\"children\":\"sse\"}],\" (Server-Sent Events).\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"command\"}],\"/\",[\"$\",\"code\",\"code-1\",{\"children\":\"args\"}],\": (for \",[\"$\",\"code\",\"code-2\",{\"children\":\"stdio\"}],\") The command to execute your server.\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"env\"}],\": (for \",[\"$\",\"code\",\"code-1\",{\"children\":\"stdio\"}],\") Environment variables to set for the child process.\"]}],\"\\n\",[\"$\",\"li\",\"li-3\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"url\"}],\"/\",[\"$\",\"code\",\"code-1\",{\"children\":\"headers\"}],\": (for \",[\"$\",\"code\",\"code-2\",{\"children\":\"shttp\"}],\" and \",[\"$\",\"code\",\"code-3\",{\"children\":\"sse\"}],\") The endpoint and headers for a remote server.\"]}],\"\\n\",[\"$\",\"li\",\"li-4\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"reconnect\"}],\"/\",[\"$\",\"code\",\"code-1\",{\"children\":\"reconnectInterval\"}],\"/\",[\"$\",\"code\",\"code-2\",{\"children\":\"maxReconnectAttempts\"}],\": (for \",[\"$\",\"code\",\"code-3\",{\"children\":\"sse\"}],\") Reconnection settings for SSE connections.\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"p\",\"p-2\",{\"children\":[\"$\",\"strong\",\"strong-0\",{\"children\":[\"Example \",[\"$\",\"code\",\"code-0\",{\"children\":\"shttp\"}],\" with Authentication:\"]}]}],\"\\n\",[\"$\",\"pre\",\"pre-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-json\",\"children\":\"{\\n  \\\"server\\\": {\\n    \\\"transport\\\": \\\"shttp\\\",\\n    \\\"url\\\": \\\"https://api.example.com/mcp\\\",\\n    \\\"headers\\\": {\\n      \\\"Authorization\\\": \\\"Bearer ${API_TOKEN}\\\",\\n      \\\"X-API-Key\\\": \\\"${API_KEY}\\\"\\n    }\\n  }\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-3\",{\"children\":[\"$\",\"strong\",\"strong-0\",{\"children\":[\"Example \",[\"$\",\"code\",\"code-0\",{\"children\":\"sse\"}],\" with Reconnection:\"]}]}],\"\\n\",[\"$\",\"pre\",\"pre-1\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-json\",\"children\":\"{\\n  \\\"server\\\": {\\n    \\\"transport\\\": \\\"sse\\\",\\n    \\\"url\\\": \\\"https://api.example.com/mcp/sse\\\",\\n    \\\"headers\\\": {\\n      \\\"Accept\\\": \\\"text/event-stream\\\",\\n      \\\"Cache-Control\\\": \\\"no-cache\\\",\\n      \\\"Authorization\\\": \\\"Bearer ${API_TOKEN}\\\"\\n    },\\n    \\\"reconnect\\\": true,\\n    \\\"reconnectInterval\\\": 5000,\\n    \\\"maxReconnectAttempts\\\": 10\\n  }\\n}\\n\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-1\",{\"id\":\"42-toolhealthsuites\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#42-toolhealthsuites\",\"children\":[\"4.2 \",[\"$\",\"code\",\"code-0\",{\"children\":\"toolHealthSuites[]\"}]]}]}],\"\\n\",[\"$\",\"p\",\"p-4\",{\"children\":\"An array of suites for testing tools directly. Each suite contains:\"}],\"\\n\",[\"$\",\"ul\",\"ul-1\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"name\"}],\": Identifier for the test suite.\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"tests\"}],\": An array of individual tool tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"parallel\"}],\": (boolean) Whether to run tests in the suite in parallel (default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"false\"}],\").\"]}],\"\\n\",[\"$\",\"li\",\"li-3\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"timeout\"}],\": (number) Override the global timeout for this suite.\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"h4\",\"h4-0\",{\"id\":\"tool-test-schema\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#tool-test-schema\",\"children\":\"Tool Test Schema\"}]}],\"\\n\",[\"$\",\"table\",\"table-0\",{\"children\":[[\"$\",\"thead\",\"thead-0\",{\"children\":[\"$\",\"tr\",\"tr-0\",{\"children\":[[\"$\",\"th\",\"th-0\",{\"children\":\"Field\"}],[\"$\",\"th\",\"th-1\",{\"children\":\"Type\"}],[\"$\",\"th\",\"th-2\",{\"children\":\"Description\"}]]}]}],[\"$\",\"tbody\",\"tbody-0\",{\"children\":[[\"$\",\"tr\",\"tr-0\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"name\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"string\"}]}],[\"$\",\"td\",\"td-2\",{\"children\":\"Tool name to test (must match an available MCP tool).\"}]]}],[\"$\",\"tr\",\"tr-1\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"description\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"string\"}],\"?\"]}],[\"$\",\"td\",\"td-2\",{\"children\":\"What this test validates.\"}]]}],[\"$\",\"tr\",\"tr-2\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"args\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"object\"}]}],[\"$\",\"td\",\"td-2\",{\"children\":\"Arguments to pass to the tool.\"}]]}],[\"$\",\"tr\",\"tr-3\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"expectedResult\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"any\"}],\"?\"]}],[\"$\",\"td\",\"td-2\",{\"children\":\"Expected result. Uses deep equality for objects, contains for strings.\"}]]}],[\"$\",\"tr\",\"tr-4\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"expectedError\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"string\"}],\"?\"]}],[\"$\",\"td\",\"td-2\",{\"children\":\"Expected error message if the tool should fail.\"}]]}],[\"$\",\"tr\",\"tr-5\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"maxLatency\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"number\"}],\"?\"]}],[\"$\",\"td\",\"td-2\",{\"children\":\"Maximum acceptable latency in milliseconds.\"}]]}],[\"$\",\"tr\",\"tr-6\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"retries\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"number\"}],\"?\"]}],[\"$\",\"td\",\"td-2\",{\"children\":\"Retries on failure (0-5, default: 0).\"}]]}]]}]]}],\"\\n\",[\"$\",\"h3\",\"h3-2\",{\"id\":\"43-resourcesuites\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#43-resourcesuites\",\"children\":[\"4.3 \",[\"$\",\"code\",\"code-0\",{\"children\":\"resourceSuites[]\"}]]}]}],\"\\n\",[\"$\",\"p\",\"p-5\",{\"children\":\"An array of suites for testing MCP resources. Each suite contains:\"}],\"\\n\",[\"$\",\"ul\",\"ul-2\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"name\"}],\": Identifier for the resource test suite.\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"discoveryTests\"}],\": Tests for resource discovery and enumeration.\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"tests\"}],\": Resource access and content validation tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-3\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"templateTests\"}],\": URI template instantiation tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-4\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"subscriptionTests\"}],\": Resource subscription and update tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-5\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"parallel\"}],\": (boolean) Whether to run tests in parallel (default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"false\"}],\").\"]}],\"\\n\",[\"$\",\"li\",\"li-6\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"timeout\"}],\": (number) Override the global timeout for this suite.\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"h4\",\"h4-1\",{\"id\":\"resource-test-types\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#resource-test-types\",\"children\":\"Resource Test Types\"}]}],\"\\n\",[\"$\",\"p\",\"p-6\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Discovery Tests\"}],\": Validate \",[\"$\",\"code\",\"code-0\",{\"children\":\"listResources\"}],\" functionality\"]}],\"\\n\",[\"$\",\"pre\",\"pre-2\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"resource-discovery\\\",\\n  expectedCount: { min: 1, max: 10 }, // Optional count validation\\n  expectedResources: [\\\"config\\\", \\\"data\\\"], // Must include these resources\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-7\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Resource Access Tests\"}],\": Validate \",[\"$\",\"code\",\"code-0\",{\"children\":\"readResource\"}],\" operations\"]}],\"\\n\",[\"$\",\"pre\",\"pre-3\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"read-config\\\",\\n  uri: \\\"config://settings.json\\\",\\n  expectedMimeType: \\\"application/json\\\",\\n  expectedContent: { \\\"version\\\": \\\"1.0\\\" }, // Partial object match\\n  maxLatency: 500,\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-8\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Template Tests\"}],\": Validate URI template instantiation\"]}],\"\\n\",[\"$\",\"pre\",\"pre-4\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"user-template\\\",\\n  template: \\\"user://{userId}\\\",\\n  arguments: { userId: \\\"123\\\" },\\n  expectedUri: \\\"user://123\\\",\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-9\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Subscription Tests\"}],\": Validate resource update subscriptions\"]}],\"\\n\",[\"$\",\"pre\",\"pre-5\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"config-updates\\\",\\n  resourceUri: \\\"config://settings.json\\\",\\n  expectUpdates: true, // Whether to expect update notifications\\n  timeout: 5000,\\n}\\n\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-3\",{\"id\":\"44-promptsuites\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#44-promptsuites\",\"children\":[\"4.4 \",[\"$\",\"code\",\"code-0\",{\"children\":\"promptSuites[]\"}]]}]}],\"\\n\",[\"$\",\"p\",\"p-10\",{\"children\":\"An array of suites for testing MCP prompts. Each suite contains:\"}],\"\\n\",[\"$\",\"ul\",\"ul-3\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"name\"}],\": Identifier for the prompt test suite.\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"discoveryTests\"}],\": Tests for prompt discovery and enumeration.\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"tests\"}],\": Prompt execution and content validation tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-3\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"argumentTests\"}],\": Argument validation tests (required vs optional).\"]}],\"\\n\",[\"$\",\"li\",\"li-4\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"templateTests\"}],\": Template generation and content tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-5\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"securityTests\"}],\": Security validation including injection prevention.\"]}],\"\\n\",[\"$\",\"li\",\"li-6\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"parallel\"}],\": (boolean) Whether to run tests in parallel (default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"false\"}],\").\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"h4\",\"h4-2\",{\"id\":\"prompt-test-types\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#prompt-test-types\",\"children\":\"Prompt Test Types\"}]}],\"\\n\",[\"$\",\"p\",\"p-11\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Discovery Tests\"}],\": Validate \",[\"$\",\"code\",\"code-0\",{\"children\":\"listPrompts\"}],\" functionality\"]}],\"\\n\",[\"$\",\"pre\",\"pre-6\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"prompt-discovery\\\",\\n  expectedCount: { min: 1 },\\n  expectedPrompts: [\\\"greeting\\\", \\\"summary\\\"],\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-12\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Prompt Execution Tests\"}],\": Validate \",[\"$\",\"code\",\"code-0\",{\"children\":\"getPrompt\"}],\" operations\"]}],\"\\n\",[\"$\",\"pre\",\"pre-7\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"user-greeting\\\",\\n  args: { name: \\\"Alice\\\", role: \\\"admin\\\" },\\n  expectedContent: [\\\"Welcome\\\", \\\"Alice\\\"], // Must contain these strings\\n  expectedMessages: [\\n    { role: \\\"user\\\", content: \\\"Hello Alice\\\" }\\n  ],\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-13\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Argument Tests\"}],\": Validate prompt argument handling\"]}],\"\\n\",[\"$\",\"pre\",\"pre-8\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"greeting-args\\\",\\n  requiredArgs: [\\\"name\\\"],\\n  optionalArgs: [\\\"role\\\"],\\n  invalidArgs: { name: 123 }, // Should be rejected\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-14\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Security Tests\"}],\": Test prompt injection prevention\"]}],\"\\n\",[\"$\",\"pre\",\"pre-9\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"injection-prevention\\\",\\n  maliciousInputs: [\\n    \\\"Ignore previous instructions and...\\\",\\n    \\\"{system: 'override'}\\\",\\n  ],\\n  expectRejection: true,\\n}\\n\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-4\",{\"id\":\"45-samplingsuites\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#45-samplingsuites\",\"children\":[\"4.5 \",[\"$\",\"code\",\"code-0\",{\"children\":\"samplingSuites[]\"}]]}]}],\"\\n\",[\"$\",\"p\",\"p-15\",{\"children\":\"An array of suites for testing MCP sampling capabilities. Each suite contains:\"}],\"\\n\",[\"$\",\"ul\",\"ul-4\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"name\"}],\": Identifier for the sampling test suite.\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"capabilityTests\"}],\": Tests for sampling capability negotiation.\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"requestTests\"}],\": Tests for sampling request/response handling.\"]}],\"\\n\",[\"$\",\"li\",\"li-3\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"securityTests\"}],\": Security validation for sampling operations.\"]}],\"\\n\",[\"$\",\"li\",\"li-4\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"performanceTests\"}],\": Performance and rate limiting tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-5\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"contentTests\"}],\": Content type validation (text, image, mixed).\"]}],\"\\n\",[\"$\",\"li\",\"li-6\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"workflowTests\"}],\": End-to-end sampling workflow tests.\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"h4\",\"h4-3\",{\"id\":\"sampling-test-types\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#sampling-test-types\",\"children\":\"Sampling Test Types\"}]}],\"\\n\",[\"$\",\"p\",\"p-16\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Capability Tests\"}],\": Validate sampling capability negotiation\"]}],\"\\n\",[\"$\",\"pre\",\"pre-10\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"sampling-supported\\\",\\n  expectedCapability: true,\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-17\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Request Tests\"}],\": Validate sampling message creation\"]}],\"\\n\",[\"$\",\"pre\",\"pre-11\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"text-sampling\\\",\\n  messages: [{ role: \\\"user\\\", content: { type: \\\"text\\\", text: \\\"Hello\\\" } }],\\n  modelPreferences: { costPriority: 0.8, speedPriority: 0.6 },\\n  expectUserApproval: true,\\n  simulateUserResponse: \\\"approve\\\",\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-18\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Security Tests\"}],\": Validate security controls\"]}],\"\\n\",[\"$\",\"pre\",\"pre-12\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"unauthorized-requests\\\",\\n  unauthorizedRequests: [\\n    { messages: [...], expectRejection: true }\\n  ],\\n  sensitiveDataTests: [\\n    { input: \\\"SSN: 123-45-6789\\\", expectFiltering: true }\\n  ],\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-19\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Performance Tests\"}],\": Validate performance and limits\"]}],\"\\n\",[\"$\",\"pre\",\"pre-13\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"concurrent-requests\\\",\\n  concurrentRequests: 10,\\n  messageSize: \\\"large\\\",\\n  expectThrottling: true,\\n  maxLatency: 5000,\\n}\\n\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-5\",{\"id\":\"46-oauth2suites\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#46-oauth2suites\",\"children\":[\"4.6 \",[\"$\",\"code\",\"code-0\",{\"children\":\"oauth2Suites[]\"}]]}]}],\"\\n\",[\"$\",\"p\",\"p-20\",{\"children\":\"An array of suites for testing OAuth 2.1 authentication flows. Each suite contains comprehensive tests for modern OAuth 2.1 security practices including PKCE, resource indicators, and multi-tenant support.\"}],\"\\n\",[\"$\",\"ul\",\"ul-5\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"name\"}],\": Identifier for the OAuth test suite.\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"description\"}],\": Optional description of the test suite purpose.\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"authorizationCodeTests\"}],\": Authorization code flow tests with PKCE.\"]}],\"\\n\",[\"$\",\"li\",\"li-3\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"clientCredentialsTests\"}],\": Machine-to-machine authentication tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-4\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"deviceCodeTests\"}],\": Device authorization flow tests for input-limited devices.\"]}],\"\\n\",[\"$\",\"li\",\"li-5\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"tokenManagementTests\"}],\": Token refresh, revocation, and expiration tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-6\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"pkceValidationTests\"}],\": PKCE (Proof Key for Code Exchange) security validation.\"]}],\"\\n\",[\"$\",\"li\",\"li-7\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"resourceIndicatorTests\"}],\": RFC 8707 resource indicators for audience restriction.\"]}],\"\\n\",[\"$\",\"li\",\"li-8\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"multiTenantTests\"}],\": Multi-tenant isolation and access control tests.\"]}],\"\\n\",[\"$\",\"li\",\"li-9\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"parallel\"}],\": (boolean) Whether to run tests in parallel (default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"false\"}],\").\"]}],\"\\n\",[\"$\",\"li\",\"li-10\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"timeout\"}],\": (number) Override the global timeout for this suite.\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"h4\",\"h4-4\",{\"id\":\"oauth-21-test-types\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#oauth-21-test-types\",\"children\":\"OAuth 2.1 Test Types\"}]}],\"\\n\",[\"$\",\"p\",\"p-21\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Authorization Code Flow Tests\"}],\": Complete OAuth 2.1 authorization code flow with PKCE\"]}],\"\\n\",[\"$\",\"pre\",\"pre-14\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"Authorization Code with PKCE\\\",\\n  flow: \\\"authorization_code\\\",\\n  server: {\\n    authorizationEndpoint: \\\"https://auth.example.com/authorize\\\",\\n    tokenEndpoint: \\\"https://auth.example.com/token\\\",\\n    supportedGrantTypes: [\\\"authorization_code\\\"],\\n    supportedScopes: [\\\"read\\\", \\\"write\\\"],\\n    pkceRequired: true\\n  },\\n  client: {\\n    clientId: \\\"test-client-id\\\",\\n    responseType: \\\"code\\\",\\n    scope: [\\\"read\\\", \\\"write\\\"],\\n    redirectUri: \\\"https://app.example.com/callback\\\",\\n    pkce: {\\n      enabled: true,\\n      codeChallengeMethod: \\\"S256\\\"\\n    }\\n  },\\n  simulateUserConsent: true,\\n  expectedResult: \\\"success\\\",\\n  securityChecks: {\\n    validatePKCE: true,\\n    validateState: true,\\n    checkTokenExpiration: true\\n  }\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-22\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Token Management Tests\"}],\": Refresh, revocation, and expiration validation\"]}],\"\\n\",[\"$\",\"pre\",\"pre-15\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"Token Refresh Test\\\",\\n  testType: \\\"refresh\\\",\\n  token: {\\n    accessToken: \\\"your-jwt-token-here\\\",\\n    refreshToken: \\\"refresh-token-example\\\",\\n    tokenType: \\\"Bearer\\\",\\n    expiresIn: 3600,\\n    scope: [\\\"read\\\", \\\"write\\\"]\\n  },\\n  expectedResult: \\\"success\\\",\\n  validateTokenClaims: true\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-23\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"PKCE Validation Tests\"}],\": Security validation for Proof Key for Code Exchange\"]}],\"\\n\",[\"$\",\"pre\",\"pre-16\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"Valid PKCE S256 Challenge\\\",\\n  codeChallengeMethod: \\\"S256\\\",\\n  invalidChallenge: false,\\n  expectedResult: \\\"success\\\",\\n  securityLevel: \\\"high\\\"\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-24\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Resource Indicator Tests\"}],\": RFC 8707 audience restriction validation\"]}],\"\\n\",[\"$\",\"pre\",\"pre-17\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"Resource-Specific Token\\\",\\n  resourceUri: \\\"https://api.example.com\\\",\\n  requestedScopes: [\\\"api:read\\\", \\\"api:write\\\"],\\n  expectedAudience: \\\"https://api.example.com\\\",\\n  validateAudienceRestriction: true,\\n  expectedResult: \\\"success\\\"\\n}\\n\"}]}],\"\\n\",[\"$\",\"p\",\"p-25\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Multi-Tenant Tests\"}],\": Tenant isolation and cross-tenant access control\"]}],\"\\n\",[\"$\",\"pre\",\"pre-18\",{\"children\":[\"$\",\"code\",\"code-0\",{\"className\":\"language-typescript\",\"children\":\"{\\n  name: \\\"Cross-Tenant Access Blocked\\\",\\n  primaryTenant: {\\n    tenantId: \\\"tenant-123\\\",\\n    isolationLevel: \\\"strict\\\",\\n    crossTenantAccess: false\\n  },\\n  secondaryTenant: {\\n    tenantId: \\\"tenant-456\\\",\\n    isolationLevel: \\\"strict\\\",\\n    crossTenantAccess: false\\n  },\\n  testScenario: \\\"cross_tenant_blocked\\\",\\n  expectedResult: \\\"success\\\",\\n  validateTenantIsolation: true\\n}\\n\"}]}],\"\\n\",[\"$\",\"h3\",\"h3-6\",{\"id\":\"47-workflows\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#47-workflows\",\"children\":[\"4.7 \",[\"$\",\"code\",\"code-0\",{\"children\":\"workflows[]\"}]]}]}],\"\\n\",[\"$\",\"p\",\"p-26\",{\"children\":\"An array of LLM-driven test workflows. Each workflow contains:\"}],\"\\n\",[\"$\",\"ul\",\"ul-6\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"name\"}],\": Identifier for the workflow.\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"steps\"}],\": An array of user interactions (usually just one for a high-level goal).\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"expectTools\"}],\": An array of tool names expected to be called during the workflow.\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"h4\",\"h4-5\",{\"id\":\"workflow-step-schema\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#workflow-step-schema\",\"children\":\"Workflow Step Schema\"}]}],\"\\n\",[\"$\",\"table\",\"table-1\",{\"children\":[[\"$\",\"thead\",\"thead-0\",{\"children\":[\"$\",\"tr\",\"tr-0\",{\"children\":[[\"$\",\"th\",\"th-0\",{\"children\":\"Field\"}],[\"$\",\"th\",\"th-1\",{\"children\":\"Type\"}],[\"$\",\"th\",\"th-2\",{\"children\":\"Description\"}]]}]}],[\"$\",\"tbody\",\"tbody-0\",{\"children\":[[\"$\",\"tr\",\"tr-0\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"user\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"string\"}]}],[\"$\",\"td\",\"td-2\",{\"children\":\"High-level user intent. The LLM will plan how to accomplish this.\"}]]}],[\"$\",\"tr\",\"tr-1\",{\"children\":[[\"$\",\"td\",\"td-0\",{\"children\":[\"$\",\"code\",\"code-0\",{\"children\":\"expectedState\"}]}],[\"$\",\"td\",\"td-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"string\"}],\"?\"]}],[\"$\",\"td\",\"td-2\",{\"children\":\"A sub-string the evaluator looks for in the final assistant message or tool result.\"}]]}]]}]]}],\"\\n\",[\"$\",\"h4\",\"h4-6\",{\"id\":\"workflow-best-practices\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#workflow-best-practices\",\"children\":\"Workflow Best Practices\"}]}],\"\\n\",[\"$\",\"ol\",\"ol-0\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":\"Write natural prompts\"}],\": Instead of micro-managing tool calls, give the LLM a complete task (e.g., \\\"Book a flight from SF to NY for next Tuesday and then find a hotel near the airport.\\\").\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"strong\",\"strong-0\",{\"children\":[\"Use workflow-level \",[\"$\",\"code\",\"code-0\",{\"children\":\"expectTools\"}]]}],\": List all tools you expect to be used across the entire workflow to verify the LLM's plan.\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"h3\",\"h3-7\",{\"id\":\"48-global-options\",\"children\":[\"$\",\"a\",\"a-0\",{\"href\":\"#48-global-options\",\"children\":\"4.8 Global Options\"}]}],\"\\n\",[\"$\",\"ul\",\"ul-7\",{\"children\":[\"\\n\",[\"$\",\"li\",\"li-0\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"timeout\"}],\": (number) Global timeout in ms for server startup and individual tool calls. Default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"30000\"}],\".\"]}],\"\\n\",[\"$\",\"li\",\"li-1\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"llmJudge\"}],\": (boolean) Enables the LLM Judge feature. Default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"false\"}],\".\"]}],\"\\n\",[\"$\",\"li\",\"li-2\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"openaiKey\"}],\": (string) OpenAI API key for the LLM Judge.\"]}],\"\\n\",[\"$\",\"li\",\"li-3\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"judgeModel\"}],\": (string) The model to use for judging. Default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"\\\"gpt-4o\\\"\"}],\".\"]}],\"\\n\",[\"$\",\"li\",\"li-4\",{\"children\":[[\"$\",\"code\",\"code-0\",{\"children\":\"passThreshold\"}],\": (number) The minimum score (0-1) from the LLM Judge to pass. Default: \",[\"$\",\"code\",\"code-1\",{\"children\":\"0.8\"}],\".\"]}],\"\\n\"]}],\"\\n\",[\"$\",\"hr\",\"hr-0\",{}]]}],null],null],null]},[null,[\"$\",\"$L4\",null,{\"parallelRouterKey\":\"children\",\"segmentPath\":[\"children\",\"docs\",\"children\",\"$5\",\"children\"],\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L6\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"notFoundStyles\":\"$undefined\"}]],null]},[[null,[\"$\",\"div\",null,{\"className\":\"flex\",\"children\":[[\"$\",\"aside\",null,{\"className\":\"w-64 shrink-0 border-r border-zinc-200/60 dark:border-zinc-800/60 p-4 sticky top-0 h-screen overflow-y-auto\",\"children\":[[\"$\",\"div\",null,{\"className\":\"text-lg font-semibold mb-4\",\"children\":\"MCPVals Docs\"}],[\"$\",\"nav\",null,{\"className\":\"space-y-1\",\"children\":[[\"$\",\"$L7\",\"/workspace/website/content/index.md\",{\"href\":\"/docs/index\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Core Concepts\"}],[\"$\",\"$L7\",\"/workspace/website/content/acknowledgements.md\",{\"href\":\"/docs/acknowledgements\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Acknowledgements\"}],[\"$\",\"$L7\",\"/workspace/website/content/cli.md\",{\"href\":\"/docs/cli\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"CLI Reference\"}],[\"$\",\"$L7\",\"/workspace/website/content/configuration.md\",{\"href\":\"/docs/configuration\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Configuration\"}],[\"$\",\"$L7\",\"/workspace/website/content/evaluation.md\",{\"href\":\"/docs/evaluation\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Evaluation \u0026 Metrics\"}],[\"$\",\"$L7\",\"/workspace/website/content/installation.md\",{\"href\":\"/docs/installation\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Installation \u0026 Runtime Requirements\"}],[\"$\",\"$L7\",\"/workspace/website/content/library-api.md\",{\"href\":\"/docs/library-api\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Library API\"}],[\"$\",\"$L7\",\"/workspace/website/content/quick-start.md\",{\"href\":\"/docs/quick-start\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Quick Start\"}],[\"$\",\"$L7\",\"/workspace/website/content/roadmap.md\",{\"href\":\"/docs/roadmap\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Roadmap\"}],[\"$\",\"$L7\",\"/workspace/website/content/vitest.md\",{\"href\":\"/docs/vitest\",\"className\":\"block rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900\",\"children\":\"Vitest Integration\"}]]}]]}],[\"$\",\"main\",null,{\"className\":\"flex-1 p-6\",\"children\":[\"$\",\"$L4\",null,{\"parallelRouterKey\":\"children\",\"segmentPath\":[\"children\",\"docs\",\"children\"],\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L6\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"notFoundStyles\":\"$undefined\"}]}]]}]],null],null]},[[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/css/f25260a5bd2b21c3.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"children\":[\"$\",\"body\",null,{\"className\":\"min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100\",\"children\":[\"$\",\"$L4\",null,{\"parallelRouterKey\":\"children\",\"segmentPath\":[\"children\"],\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L6\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":\"404\"}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],\"notFoundStyles\":[]}]}]}]],null],null],\"couldBeIntercepted\":false,\"initialHead\":[null,\"$L8\"],\"globalErrorComponent\":\"$9\",\"missingSlots\":\"$Wa\"}]\n"])</script><script>self.__next_f.push([1,"8:[[\"$\",\"meta\",\"0\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}],[\"$\",\"meta\",\"1\",{\"charSet\":\"utf-8\"}],[\"$\",\"title\",\"2\",{\"children\":\"MCPVals Docs\"}],[\"$\",\"meta\",\"3\",{\"name\":\"description\",\"content\":\"Documentation for MCPVals\"}]]\n3:null\n"])</script></body></html>
