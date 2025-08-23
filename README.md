@@ -1556,3 +1556,39 @@ export default {
 - [chalk](https://github.com/chalk/chalk) – for terminal colors
 
 Enjoy testing your MCP servers – PRs, issues & feedback welcome! ✨
+
+---
+
+## 5. CI: Run in GitHub Actions
+
+MCPVals can run in CI to validate your MCP servers. This repo includes a reusable composite action and sample workflow.
+
+- Composite action: `.github/actions/mcpvals-eval/action.yml`
+- Example workflow: `.github/workflows/evals.yml`
+
+Minimal usage inside a workflow step:
+
+```yaml
+- name: Run tool health
+  uses: ./.github/actions/mcpvals-eval
+  with:
+    config: examples/tools/tool-health-eval.config.json
+    reporter: console
+    tool-health-only: "true"
+```
+
+Optional: enable LLM-driven workflows by adding an `ANTHROPIC_API_KEY` secret.
+
+```yaml
+- name: Run workflows (requires key)
+  uses: ./.github/actions/mcpvals-eval
+  with:
+    config: examples/basic/simple-server-eval.config.json
+    workflows-only: "true"
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+The CLI exits with non-zero on failures, making it CI-friendly.
+
+---

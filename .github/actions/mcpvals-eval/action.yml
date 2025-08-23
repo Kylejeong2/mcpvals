@@ -1,0 +1,83 @@
+name: "Run MCPVals"
+description: "Run MCP server evaluations with MCPVals CLI"
+author: "mcpvals"
+
+inputs:
+  config:
+    description: "Path to evaluation configuration file"
+    required: true
+  reporter:
+    description: "Output format: console | json | junit"
+    required: false
+    default: "console"
+  debug:
+    description: "Enable verbose logging"
+    required: false
+    default: "false"
+  llm-judge:
+    description: "Enable LLM judge evaluation"
+    required: false
+    default: "false"
+  tool-health-only:
+    description: "Run only tool health tests"
+    required: false
+    default: "false"
+  resources-only:
+    description: "Run only resource evaluation tests"
+    required: false
+    default: "false"
+  prompts-only:
+    description: "Run only prompt evaluation tests"
+    required: false
+    default: "false"
+  sampling-only:
+    description: "Run only sampling evaluation tests"
+    required: false
+    default: "false"
+  oauth-only:
+    description: "Run only OAuth 2.1 tests"
+    required: false
+    default: "false"
+  workflows-only:
+    description: "Run only workflows (requires ANTHROPIC_API_KEY)"
+    required: false
+    default: "false"
+  working-directory:
+    description: "Directory to execute from"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        check-latest: true
+
+    - name: Install MCPVals CLI
+      shell: bash
+      run: |
+        set -euo pipefail
+        npm i -g mcpvals@latest
+
+    - name: Run Evaluations
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ANTHROPIC_API_KEY: ${{ env.ANTHROPIC_API_KEY || secrets.ANTHROPIC_API_KEY }}
+        OPENAI_API_KEY: ${{ env.OPENAI_API_KEY || secrets.OPENAI_API_KEY }}
+      run: |
+        set -euo pipefail
+        CMD=(mcpvals eval "${{ inputs.config }}" -r "${{ inputs.reporter }}")
+        if [ "${{ inputs.debug }}" = "true" ]; then CMD+=("--debug"); fi
+        if [ "${{ inputs.llm-judge }}" = "true" ]; then CMD+=("--llm-judge"); fi
+        if [ "${{ inputs.tool-health-only }}" = "true" ]; then CMD+=("--tool-health-only"); fi
+        if [ "${{ inputs.resources-only }}" = "true" ]; then CMD+=("--resources-only"); fi
+        if [ "${{ inputs.prompts-only }}" = "true" ]; then CMD+=("--prompts-only"); fi
+        if [ "${{ inputs.sampling-only }}" = "true" ]; then CMD+=("--sampling-only"); fi
+        if [ "${{ inputs.oauth-only }}" = "true" ]; then CMD+=("--oauth-only"); fi
+        if [ "${{ inputs.workflows-only }}" = "true" ]; then CMD+=("--workflows-only"); fi
+        echo "Running: ${CMD[@]}"
+        "${CMD[@]}"

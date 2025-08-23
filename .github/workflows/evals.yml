@@ -1,0 +1,62 @@
+name: Evals
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  tool-health:
+    name: Tool Health (examples)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.4.0
+          run_install: true
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Run tool-health-only against simple server
+        uses: ./.github/actions/mcpvals-eval
+        with:
+          config: examples/tools/tool-health-eval.config.json
+          reporter: console
+          tool-health-only: "true"
+          debug: "false"
+        env:
+          # Optional: enable workflows by providing Anthropic key
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  workflows:
+    name: Workflows (optional)
+    runs-on: ubuntu-latest
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.4.0
+          run_install: true
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Run example workflow suite
+        uses: ./.github/actions/mcpvals-eval
+        with:
+          config: examples/basic/simple-server-eval.config.json
+          reporter: console
+          workflows-only: "true"
+          debug: "false"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
