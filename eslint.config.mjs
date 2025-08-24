@@ -16,6 +16,7 @@ export default [
       "**/*.yaml",
       "**/*.md",
       ".github/**/*",
+      ".github/workflows/**/*",
     ],
   },
   {
