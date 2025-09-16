@@ -21,10 +21,6 @@ describe("SSE Transport Validation", () => {
       },
       workflows: [],
       toolHealthSuites: [],
-      resourceSuites: [],
-      promptSuites: [],
-      samplingSuites: [],
-      oauth2Suites: [],
     };
 
     const result = ConfigSchema.safeParse(config);
@@ -53,10 +49,6 @@ describe("SSE Transport Validation", () => {
       },
       workflows: [],
       toolHealthSuites: [],
-      resourceSuites: [],
-      promptSuites: [],
-      samplingSuites: [],
-      oauth2Suites: [],
     };
 
     const result = ConfigSchema.safeParse(config);

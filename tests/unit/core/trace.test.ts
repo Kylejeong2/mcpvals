@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { TraceStore } from "../../../src/eval/core/trace.js";
 import {
-  TraceStore,
   TraceEntry,
   ToolCall,
   ToolResult,
   ConversationMessage,
-} from "../../../src/eval/core/trace";
+} from "../../../src/types/trace.js";
+
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 
 describe("TraceStore", () => {

@@ -9,7 +9,7 @@ import type {
 } from "./types.js";
 import type { ServerConfig } from "../eval/core/config.js";
 import { evaluate } from "../eval/core/index.js";
-import type { EvaluateOptions } from "../eval/core/index.js";
+import type { EvaluateOptions } from "../types/evaluation.js";
 
 /**
  * Global server runner instance for the current test suite
@@ -41,80 +41,6 @@ export async function setupMCPServer(
     runWorkflow: async (steps) => {
       if (!currentServerRunner) throw new Error("Server not initialized");
       return await currentServerRunner.runWorkflowWithLLM(steps);
-    },
-
-    listResources: async () => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      try {
-        const result = await currentServerRunner.listResources();
-        return result.resources?.map((r) => r.uri || r.name) || [];
-      } catch {
-        return [];
-      }
-    },
-
-    getResource: async (uri: string) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return await currentServerRunner.readResource(uri);
-    },
-
-    listResourceTemplates: async () => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      try {
-        const result = await currentServerRunner.listResourceTemplates();
-        return result.resourceTemplates?.map((t) => t.uriTemplate) || [];
-      } catch {
-        return [];
-      }
-    },
-
-    subscribeToResource: async (uri: string) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return await currentServerRunner.subscribeToResource(uri);
-    },
-
-    unsubscribeFromResource: async (uri: string) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return await currentServerRunner.unsubscribeFromResource(uri);
-    },
-
-    listPrompts: async () => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      try {
-        const result = await currentServerRunner.listPrompts();
-        return result.prompts?.map((p) => p.name) || [];
-      } catch {
-        return [];
-      }
-    },
-
-    getPrompt: async (name: string, args?: Record<string, unknown>) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return await currentServerRunner.getPrompt(name, args);
-    },
-
-    createSamplingMessage: async (request) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return await currentServerRunner.createSamplingMessage(request);
-    },
-
-    simulateUserApproval: async (requestId, approved, modifiedRequest) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return await currentServerRunner.simulateUserApproval(
-        requestId,
-        approved,
-        modifiedRequest,
-      );
-    },
-
-    validateModelPreferences: (preferences) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return currentServerRunner.validateModelPreferences(preferences);
-    },
-
-    validateSamplingContent: (messages) => {
-      if (!currentServerRunner) throw new Error("Server not initialized");
-      return currentServerRunner.validateSamplingContent(messages);
     },
   };
 
@@ -163,50 +89,6 @@ export function describeToolHealthFromConfig(
   return describeEvalFromConfig(name, configPath, {
     ...options,
     toolHealthOnly: true,
-  });
-}
-
-export function describeResourcesFromConfig(
-  name: string,
-  configPath: string,
-  options: Omit<EvaluateOptions, "resourcesOnly"> & { timeout?: number } = {},
-): void {
-  return describeEvalFromConfig(name, configPath, {
-    ...options,
-    resourcesOnly: true,
-  });
-}
-
-export function describePromptsFromConfig(
-  name: string,
-  configPath: string,
-  options: Omit<EvaluateOptions, "promptsOnly"> & { timeout?: number } = {},
-): void {
-  return describeEvalFromConfig(name, configPath, {
-    ...options,
-    promptsOnly: true,
-  });
-}
-
-export function describeSamplingFromConfig(
-  name: string,
-  configPath: string,
-  options: Omit<EvaluateOptions, "samplingOnly"> & { timeout?: number } = {},
-): void {
-  return describeEvalFromConfig(name, configPath, {
-    ...options,
-    samplingOnly: true,
-  });
-}
-
-export function describeOAuth2FromConfig(
-  name: string,
-  configPath: string,
-  options: Omit<EvaluateOptions, "oauth2Only"> & { timeout?: number } = {},
-): void {
-  return describeEvalFromConfig(name, configPath, {
-    ...options,
-    oauth2Only: true,
   });
 }
 
@@ -405,80 +287,6 @@ export function mcpTest(
         runWorkflow: async (steps) => {
           if (!currentServerRunner) throw new Error("Server not initialized");
           return await currentServerRunner.runWorkflowWithLLM(steps);
-        },
-
-        listResources: async () => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          try {
-            const result = await currentServerRunner.listResources();
-            return result.resources?.map((r) => r.uri || r.name) || [];
-          } catch {
-            return [];
-          }
-        },
-
-        getResource: async (uri: string) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return await currentServerRunner.readResource(uri);
-        },
-
-        listResourceTemplates: async () => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          try {
-            const result = await currentServerRunner.listResourceTemplates();
-            return result.resourceTemplates?.map((t) => t.uriTemplate) || [];
-          } catch {
-            return [];
-          }
-        },
-
-        subscribeToResource: async (uri: string) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return await currentServerRunner.subscribeToResource(uri);
-        },
-
-        unsubscribeFromResource: async (uri: string) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return await currentServerRunner.unsubscribeFromResource(uri);
-        },
-
-        listPrompts: async () => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          try {
-            const result = await currentServerRunner.listPrompts();
-            return result.prompts?.map((p) => p.name) || [];
-          } catch {
-            return [];
-          }
-        },
-
-        getPrompt: async (name: string, args?: Record<string, unknown>) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return await currentServerRunner.getPrompt(name, args);
-        },
-
-        createSamplingMessage: async (request) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return await currentServerRunner.createSamplingMessage(request);
-        },
-
-        simulateUserApproval: async (requestId, approved, modifiedRequest) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return await currentServerRunner.simulateUserApproval(
-            requestId,
-            approved,
-            modifiedRequest,
-          );
-        },
-
-        validateModelPreferences: (preferences) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return currentServerRunner.validateModelPreferences(preferences);
-        },
-
-        validateSamplingContent: (messages) => {
-          if (!currentServerRunner) throw new Error("Server not initialized");
-          return currentServerRunner.validateSamplingContent(messages as never);
         },
       };
 

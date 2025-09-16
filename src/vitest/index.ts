@@ -6,10 +6,6 @@ export {
   teardownMCPServer,
   describeEvalFromConfig,
   describeToolHealthFromConfig,
-  describeResourcesFromConfig,
-  describePromptsFromConfig,
-  describeSamplingFromConfig,
-  describeOAuth2FromConfig,
 } from "./vitest-eval.js";
 export {
   ToolCallScorer,
@@ -36,7 +32,6 @@ export type {
   // Concrete test case types
   ToolCallTestCase,
   WorkflowTestCase,
-  ResourceTestCase,
   // Common result types
   MCPToolResult,
   MCPWorkflowResult,

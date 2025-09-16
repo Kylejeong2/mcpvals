@@ -1,29 +1,6 @@
 import { ToolTest, ToolHealthSuite } from "../core/config.js";
 import { ServerRunner } from "../core/runner.js";
-
-export interface ToolTestResult {
-  testName: string;
-  toolName: string;
-  passed: boolean;
-  score: number;
-  latency: number;
-  details: string;
-  error?: string;
-  retryCount: number;
-  metadata?: Record<string, unknown>;
-}
-
-export interface ToolHealthResult {
-  suiteName: string;
-  description?: string;
-  results: ToolTestResult[];
-  overallScore: number;
-  passed: boolean;
-  totalTests: number;
-  passedTests: number;
-  failedTests: number;
-  averageLatency: number;
-}
+import { ToolTestResult, ToolHealthResult } from "../../types/tool.js";
 
 export class ToolTester {
   constructor(

@@ -18,7 +18,6 @@ Demonstrates basic MCP server testing patterns:
 Shows comprehensive evaluation suites with scoring:
 
 - Math calculator server evaluation
-- File system resource server evaluation
 - Using different types of scorers
 - Automated threshold-based pass/fail evaluation
 

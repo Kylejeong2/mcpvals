@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
 import { evaluate } from "../../src/eval/core/index";
 import { Config, createToolName } from "../../src/eval/core/config";
-import { WorkflowEvaluation } from "../../src/eval/evaluators/deterministic";
-import { ToolHealthResult } from "../../src/eval/evaluators/tool-health";
+import { WorkflowEvaluation } from "../../src/types/evaluation.js";
+import { ToolHealthResult } from "../../src/types/tool.js";
 
 // Mock all dependencies
 vi.mock("../../src/eval/core/config", async (importOriginal) => {
@@ -53,7 +53,6 @@ describe("evaluate", () => {
     report: Mock;
     reportToolHealth: Mock;
     reportCombined: Mock;
-    reportCombinedAll: Mock;
   };
 
   beforeEach(async () => {
@@ -77,7 +76,6 @@ describe("evaluate", () => {
       report: vi.fn(),
       reportToolHealth: vi.fn(),
       reportCombined: vi.fn(),
-      reportCombinedAll: vi.fn(),
     };
 
     // Apply mocks using vi.mocked
@@ -184,10 +182,6 @@ describe("evaluate", () => {
           ],
         },
       ],
-      resourceSuites: [],
-      promptSuites: [],
-      samplingSuites: [],
-      oauth2Suites: [],
       timeout: 30000,
       llmJudge: false,
       judgeModel: "gpt-4o",
@@ -324,7 +318,7 @@ describe("evaluate", () => {
       mockLoadConfig.mockResolvedValue(emptyConfig);
 
       await expect(evaluate("empty-config.json")).rejects.toThrow(
-        "Configuration must include workflows, toolHealthSuites, resourceSuites, promptSuites, samplingSuites, or oauth2Suites",
+        "Configuration must include workflows, toolHealthSuites",
       );
     });
 
@@ -396,10 +390,7 @@ describe("evaluate", () => {
     it("should use different reporters", async () => {
       await evaluate("test-config.json", { reporter: "console" });
 
-      expect(mockConsoleReporter.reportCombinedAll).toHaveBeenCalledWith(
-        expect.any(Array),
-        expect.any(Array),
-        expect.any(Array),
+      expect(mockConsoleReporter.reportCombined).toHaveBeenCalledWith(
         expect.any(Array),
         expect.any(Array),
       );
@@ -642,10 +633,7 @@ describe("evaluate", () => {
     it("should use combined reporter for both", async () => {
       await evaluate("test-config.json");
 
-      expect(mockConsoleReporter.reportCombinedAll).toHaveBeenCalledWith(
-        expect.any(Array),
-        expect.any(Array),
-        expect.any(Array),
+      expect(mockConsoleReporter.reportCombined).toHaveBeenCalledWith(
         expect.any(Array),
         expect.any(Array),
       );

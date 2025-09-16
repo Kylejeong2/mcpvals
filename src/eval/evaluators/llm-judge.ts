@@ -1,20 +1,9 @@
 import { generateText, LanguageModelV1 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { TraceStore, ConversationMessage } from "../core/trace.js";
+import { TraceStore } from "../core/trace.js";
+import { ConversationMessage } from "../../types/trace.js";
 import { Workflow } from "../core/config.js";
-
-export interface LlmJudgeResult {
-  score: number; // 0-1 float
-  reason: string; // LLM explanation
-}
-
-export interface LlmJudgeArgs {
-  model: string;
-  apiKey: string;
-  workflow: Workflow;
-  traceStore: TraceStore;
-  maxMessages?: number;
-}
+import { LlmJudgeArgs, LlmJudgeResult } from "../../types/evaluation.js";
 
 /**
  * Build a conversation dump from the trace store

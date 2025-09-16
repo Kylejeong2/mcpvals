@@ -33,10 +33,6 @@ Tests that verify component interactions using mocked external dependencies.
 - **`evaluate.test.ts`** - Main evaluation pipeline integration
 - **`runner.test.ts`** - ServerRunner with mocked MCP servers
 - **`tool-health.test.ts`** - Tool health testing with mocked tools
-- **`resource.test.ts`** - Resource evaluation with mocked resources
-- **`prompt.test.ts`** - Prompt evaluation with mocked prompts
-- **`sampling.test.ts`** - Sampling evaluation with mocked sampling
-- **`oauth.test.ts`** - OAuth authentication flow testing
 
 ### End-to-End Tests (`e2e/`)
 

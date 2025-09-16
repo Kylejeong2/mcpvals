@@ -129,14 +129,6 @@ export class ConfigurationValidator {
     warnings.push(...testValidation.warnings);
     suggestions.push(...testValidation.suggestions);
 
-    // Validate cross-references between test suites
-    if (this.options.validateTestReferences) {
-      const refValidation = this.validateTestReferences(config);
-      errors.push(...refValidation.errors);
-      warnings.push(...refValidation.warnings);
-      suggestions.push(...refValidation.suggestions);
-    }
-
     // Validate performance settings
     const perfValidation = this.validatePerformanceSettings(config);
     errors.push(...perfValidation.errors);
@@ -335,42 +327,6 @@ export class ConfigurationValidator {
       }
     }
 
-    for (const suite of config.resourceSuites || []) {
-      totalTests += (suite.resourceTests || []).length;
-      totalTests += (suite.discoveryTests || []).length;
-      totalTests += (suite.templateTests || []).length;
-      totalTests += (suite.subscriptionTests || []).length;
-
-      if (totalTests === 0) {
-        warnings.push(`Resource suite "${suite.name}" has no tests`);
-      }
-    }
-
-    for (const suite of config.promptSuites || []) {
-      totalTests += (suite.promptTests || []).length;
-      totalTests += (suite.discoveryTests || []).length;
-      totalTests += (suite.argumentTests || []).length;
-      totalTests += (suite.templateTests || []).length;
-      totalTests += (suite.securityTests || []).length;
-
-      if (totalTests === 0) {
-        warnings.push(`Prompt suite "${suite.name}" has no tests`);
-      }
-    }
-
-    for (const suite of config.samplingSuites || []) {
-      totalTests += (suite.capabilityTests || []).length;
-      totalTests += (suite.requestTests || []).length;
-      totalTests += (suite.securityTests || []).length;
-      totalTests += (suite.performanceTests || []).length;
-      totalTests += (suite.contentTests || []).length;
-      totalTests += (suite.workflowTests || []).length;
-
-      if (totalTests === 0) {
-        warnings.push(`Sampling suite "${suite.name}" has no tests`);
-      }
-    }
-
     totalTests += config.workflows?.length || 0;
 
     if (totalTests === 0) {
@@ -386,52 +342,13 @@ export class ConfigurationValidator {
 
     // Check for duplicate suite names
     const suiteNames = new Set<string>();
-    const allSuites = [
-      ...(config.toolHealthSuites || []).map((s) => s.name),
-      ...(config.resourceSuites || []).map((s) => s.name),
-      ...(config.promptSuites || []).map((s) => s.name),
-      ...(config.samplingSuites || []).map((s) => s.name),
-    ];
+    const allSuites = [...(config.toolHealthSuites || []).map((s) => s.name)];
 
     for (const name of allSuites) {
       if (suiteNames.has(name)) {
         errors.push(`Duplicate suite name: ${name}`);
       }
       suiteNames.add(name);
-    }
-
-    return { valid: errors.length === 0, errors, warnings, suggestions };
-  }
-
-  private validateTestReferences(config: Config): ValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-    const suggestions: string[] = [];
-
-    // Check for test name duplicates within suites
-    for (const suite of config.toolHealthSuites || []) {
-      const testNames = new Set<string>();
-      for (const test of suite.tests) {
-        if (testNames.has(test.name)) {
-          errors.push(
-            `Duplicate test name in tool health suite "${suite.name}": ${test.name}`,
-          );
-        }
-        testNames.add(test.name);
-      }
-    }
-
-    // Similar validation for other suite types...
-    for (const suite of config.promptSuites || []) {
-      const testNames = new Set<string>();
-      for (const test of suite.promptTests || []) {
-        if (testNames.has(test.name)) {
-          errors.push(
-            `Duplicate test name in prompt suite "${suite.name}": ${test.name}`,
-          );
-        }
-        testNames.add(test.name);
-      }
     }
 
     return { valid: errors.length === 0, errors, warnings, suggestions };
@@ -456,12 +373,9 @@ export class ConfigurationValidator {
     }
 
     // Check parallel execution settings
-    const hasParallelSuites = [
-      ...(config.toolHealthSuites || []),
-      ...(config.resourceSuites || []),
-      ...(config.promptSuites || []),
-      ...(config.samplingSuites || []),
-    ].some((suite) => suite.parallel);
+    const hasParallelSuites = [...(config.toolHealthSuites || [])].some(
+      (suite) => suite.parallel,
+    );
 
     if (hasParallelSuites) {
       suggestions.push(

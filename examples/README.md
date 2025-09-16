@@ -11,26 +11,12 @@ examples/
 ├── run-evaluation.ts         # TypeScript programmatic usage example
 ├── servers/                  # Example MCP servers
 │   ├── simple-mcp-server.js       # Basic math operations server
-│   ├── simple-prompt-server.js    # Prompt template server
-│   └── simple-sampling-server.js  # Sampling capability server
 ├── basic/                    # Simple, foundational examples
 │   ├── simple-server-eval.config.json    # Basic server testing
 │   ├── simple-server-eval.config.ts      # TypeScript version
 │   └── simple-prompt-eval.config.json    # Basic prompt testing
 ├── tools/                    # Tool health evaluation
 │   └── tool-health-eval.config.json      # Tool execution testing
-├── resources/               # Resource evaluation
-│   ├── resource-eval.config.json         # Basic resource testing
-│   └── advanced-resource-eval.config.ts  # Advanced resource scenarios
-├── prompts/                 # Prompt evaluation
-│   ├── prompt-eval.config.json           # Basic prompt testing
-│   └── advanced-prompt-eval.config.ts    # Advanced prompt scenarios
-├── sampling/                # Sampling evaluation
-│   ├── sampling-capability-eval.config.json     # Basic sampling
-│   ├── sampling-performance-eval.config.json    # Performance tests
-│   ├── sampling-security-eval.config.json       # Security tests
-│   ├── sampling-workflow-eval.config.json       # Workflow tests
-│   └── comprehensive-sampling-eval.config.ts    # Full sampling suite
 ├── integrations/            # Third-party service integrations
 │   ├── weather-server-eval.config.json          # Weather API testing
 │   ├── github-server-eval.config.json           # GitHub API testing
@@ -57,17 +43,8 @@ Use the predefined npm scripts for easy testing:
 # Basic server functionality
 npm run test:simple
 
-# Prompt evaluation
-npm run test:prompts
-
 # Tool health checks
 npm run test:tools
-
-# Resource evaluation
-npm run test:resources
-
-# Sampling capabilities
-npm run test:sampling
 
 # Third-party integrations (requires API keys)
 npm run test:weather
@@ -111,58 +88,7 @@ npm run test:ts
 - Error handling patterns
 - Execution timeouts
 
-### 3. Resource Tests (`resources/`)
-
-**Purpose**: Test resource access patterns and performance
-
-**Files**:
-
-- `resource-eval.config.json` - Basic resource access testing
-- `advanced-resource-eval.config.ts` - Complex resource scenarios
-
-**Metrics tested**:
-
-- Resource discovery
-- Access performance
-- Template substitution
-- Error scenarios
-
-### 4. Prompt Tests (`prompts/`)
-
-**Purpose**: Evaluate prompt template functionality and generation
-
-**Files**:
-
-- `prompt-eval.config.json` - Basic prompt testing
-- `advanced-prompt-eval.config.ts` - Advanced prompt scenarios
-
-**Metrics tested**:
-
-- Prompt discovery
-- Template rendering
-- Parameter validation
-- Error handling
-
-### 5. Sampling Tests (`sampling/`)
-
-**Purpose**: Test sampling capabilities and AI model interactions
-
-**Files**:
-
-- `sampling-capability-eval.config.json` - Basic sampling features
-- `sampling-performance-eval.config.json` - Performance benchmarks
-- `sampling-security-eval.config.json` - Security validation
-- `sampling-workflow-eval.config.json` - Workflow integration
-- `comprehensive-sampling-eval.config.ts` - Full sampling test suite
-
-**Metrics tested**:
-
-- Model preferences
-- Context inclusion
-- Security constraints
-- Performance metrics
-
-### 6. Integration Tests (`integrations/`)
+### 3. Integration Tests (`integrations/`)
 
 **Purpose**: Test real-world third-party service integrations
 
@@ -216,56 +142,6 @@ A basic MCP server providing mathematical operations:
 **Features**: Error handling, deterministic outputs
 **Use case**: Basic functionality testing
 
-### Simple Prompt Server (`servers/simple-prompt-server.js`)
-
-A prompt template server for testing prompt evaluation:
-
-**Prompts**: `greeting`, `summarize`
-**Features**: Parameter substitution, language support
-**Use case**: Prompt template testing
-
-### Simple Sampling Server (`servers/simple-sampling-server.js`)
-
-A server demonstrating sampling capabilities:
-
-**Features**: Model preferences, context handling
-**Use case**: Sampling functionality testing
-
-## 📊 Test Configuration Patterns
-
-### JSON Configuration
-
-```json
-{
-  "server": {
-    "transport": "stdio",
-    "command": "node",
-    "args": ["../servers/simple-mcp-server.js"]
-  },
-  "workflows": [...],
-  "toolHealthSuites": [...],
-  "timeout": 30000
-}
-```
-
-### TypeScript Configuration
-
-```typescript
-import { Config } from "../../src/eval/config.js";
-
-const config: Config = {
-  server: {
-    transport: "stdio",
-    command: "node",
-    args: ["../servers/simple-mcp-server.js"],
-  },
-  workflows: [],
-  // ... other required properties
-};
-
-export default config;
-```
-
 ## 🔧 Creating Custom Tests
 
 ### 1. Choose Your Test Type
@@ -274,9 +150,6 @@ Pick the appropriate directory based on what you're testing:
 
 - **Basic functionality** → `basic/`
 - **Tool execution** → `tools/`
-- **Resource access** → `resources/`
-- **Prompt templates** → `prompts/`
-- **Sampling features** → `sampling/`
 - **Third-party APIs** → `integrations/`
 - **Remote servers** → `remote/`
 - **Advanced features** → `advanced/`

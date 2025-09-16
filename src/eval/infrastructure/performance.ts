@@ -1,23 +1,8 @@
 import { performance } from "perf_hooks";
-
-export interface PerformanceMetrics {
-  memoryUsage: NodeJS.MemoryUsage;
-  cpuUsage: NodeJS.CpuUsage;
-  heapUsed: number;
-  heapTotal: number;
-  external: number;
-  rss: number;
-  uptime: number;
-  gcCount?: number;
-  gcDuration?: number;
-}
-
-export interface PerformanceThresholds {
-  maxHeapUsedMB: number;
-  maxRssMB: number;
-  maxTestDurationMs: number;
-  gcTriggerThresholdMB: number;
-}
+import {
+  PerformanceMetrics,
+  PerformanceThresholds,
+} from "../../types/performance";
 
 // Default performance thresholds
 export const DEFAULT_PERFORMANCE_THRESHOLDS: PerformanceThresholds = {
