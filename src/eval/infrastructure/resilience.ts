@@ -1,26 +1,10 @@
 // Error handling and resilience patterns for MCP evaluation
-
-export interface RetryOptions {
-  maxAttempts: number;
-  initialDelayMs: number;
-  maxDelayMs: number;
-  backoffMultiplier: number;
-  jitterMs?: number;
-  retryCondition?: (error: unknown) => boolean;
-}
-
-export interface CircuitBreakerOptions {
-  failureThreshold: number;
-  resetTimeoutMs: number;
-  halfOpenMaxCalls: number;
-  monitoringPeriodMs: number;
-}
-
-export interface RateLimiterOptions {
-  maxRequests: number;
-  windowMs: number;
-  burstLimit?: number;
-}
+import {
+  RetryOptions,
+  CircuitBreakerOptions,
+  RateLimiterOptions,
+  CircuitBreakerState,
+} from "../../types/resilience";
 
 // Default configuration constants
 export const RETRY_CONSTANTS = {
@@ -43,12 +27,6 @@ export const RATE_LIMITER_CONSTANTS = {
   DEFAULT_WINDOW_MS: 60000,
   DEFAULT_BURST_LIMIT: 5,
 } as const;
-
-export enum CircuitBreakerState {
-  CLOSED = "CLOSED",
-  OPEN = "OPEN",
-  HALF_OPEN = "HALF_OPEN",
-}
 
 export class ExponentialBackoff {
   private options: Required<RetryOptions>;

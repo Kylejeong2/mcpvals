@@ -28,12 +28,6 @@ importers:
       execa:
         specifier: ^8.0.1
         version: 8.0.1
-      node-oauth2-server:
-        specifier: ^2.4.0
-        version: 2.4.0
-      oauth2-server:
-        specifier: ^3.1.1
-        version: 3.1.1
       zod:
         specifier: ^3.25.0
         version: 3.25.75
@@ -1210,37 +1204,12 @@ packages:
         integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==,
       }
 
-  basic-auth@0.0.1:
-    resolution:
-      {
-        integrity: sha512-sCz6E05DMvrA9dUBGJFfnQ3qs+/lQkVr7qjOT5XMMNfpTzWbpkElpzXfnbNlBjPnDQyz0uBFJ4nELJRIdcKoNQ==,
-      }
-
-  basic-auth@2.0.1:
-    resolution:
-      {
-        integrity: sha512-NF+epuEdnUYVlGuhaxbbq+dvJttwLnGY+YixlXlME5KpQ5W3CnXA5cVTneY3SPbPDRkcjMbifrwmFYcClgOZeg==,
-      }
-    engines: { node: ">= 0.8" }
-
   better-path-resolve@1.0.0:
     resolution:
       {
         integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==,
       }
     engines: { node: ">=4" }
-
-  bluebird@2.11.0:
-    resolution:
-      {
-        integrity: sha512-UfFSr22dmHPQqPP9XWHRhq+gWnHCYguQGkXQlbyPtW5qTnhFWA8/iXg765tH0cAjy7l/zPJ1aBTO0g5XgA7kvQ==,
-      }
-
-  bluebird@3.7.2:
-    resolution:
-      {
-        integrity: sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==,
-      }
 
   body-parser@2.2.0:
     resolution:
@@ -1380,20 +1349,6 @@ packages:
         integrity: sha512-nPdaFdQ0h/GEigbPClz11D0v/ZJEwxmeVZGeMo3Z5StPtUTkA9o1lD6QwoirYiSDzbcwn2XcjwmCp68W1IS4TA==,
       }
     engines: { node: ">=18" }
-
-  co-bluebird@1.1.0:
-    resolution:
-      {
-        integrity: sha512-JuoemMXxQjYAxbfRrNpOsLyiwDiY8mXvGqJyYLM7jMySDJtnMklW3V2o8uyubpc1eN2YoRsAdfZ1lfKCd3lsrA==,
-      }
-    engines: { node: ">=0.12.0" }
-
-  co-use@1.1.0:
-    resolution:
-      {
-        integrity: sha512-1lVRtdywv41zQO/xvI2wU8w6oFcUYT6T84YKSxN25KN4N4Kld3scLovt8FjDmD63Cm7HtyRWHjezt+IanXmkyA==,
-      }
-    engines: { node: ">=0.12.0" }
 
   color-convert@2.0.1:
     resolution:
@@ -2418,12 +2373,6 @@ packages:
       }
     engines: { node: ">= 0.4" }
 
-  is-generator@1.0.3:
-    resolution:
-      {
-        integrity: sha512-G56jBpbJeg7ds83HW1LuShNs8J73Fv3CPz/bmROHOHlnKkN8sWb9ujiagjmxxMUywftgq48HlBZELKKqFLk0oA==,
-      }
-
   is-glob@4.0.3:
     resolution:
       {
@@ -2732,12 +2681,6 @@ packages:
         integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==,
       }
 
-  lodash@4.17.19:
-    resolution:
-      {
-        integrity: sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==,
-      }
-
   log-update@6.1.0:
     resolution:
       {
@@ -2777,13 +2720,6 @@ packages:
       }
     engines: { node: ">= 0.4" }
 
-  media-typer@0.3.0:
-    resolution:
-      {
-        integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==,
-      }
-    engines: { node: ">= 0.6" }
-
   media-typer@1.1.0:
     resolution:
       {
@@ -2818,24 +2754,10 @@ packages:
       }
     engines: { node: ">=8.6" }
 
-  mime-db@1.52.0:
-    resolution:
-      {
-        integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==,
-      }
-    engines: { node: ">= 0.6" }
-
   mime-db@1.54.0:
     resolution:
       {
         integrity: sha512-aU5EJuIN2WDemCcAp2vFBfp/m4EAhWJnUNSSw0ixs7/kXbd6Pg64EmwJkNdFhB8aWt1sH2CTXrLxo/iAGV3oPQ==,
-      }
-    engines: { node: ">= 0.6" }
-
-  mime-types@2.1.35:
-    resolution:
-      {
-        integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==,
       }
     engines: { node: ">= 0.6" }
 
@@ -2938,26 +2860,12 @@ packages:
       encoding:
         optional: true
 
-  node-oauth2-server@2.4.0:
-    resolution:
-      {
-        integrity: sha512-k3NUmzjEIPyKBuY1OYtHqJ2L6siIlN+oERGe1MVeUGxzeOxEq/2z5K03/P8lfW4ys0Iivbn1KlGJgBeXNZ6Z5w==,
-      }
-    engines: { node: ">=0.8" }
-
   npm-run-path@5.3.0:
     resolution:
       {
         integrity: sha512-ppwTtiJZq0O/ai0z7yfudtBpWIoxM8yE6nHi1X47eFR2EWORqfbu6CnPlNsjeN683eT0qG6H/Pyf9fCcvjnnnQ==,
       }
     engines: { node: ^12.20.0 || ^14.13.1 || >=16.0.0 }
-
-  oauth2-server@3.1.1:
-    resolution:
-      {
-        integrity: sha512-4dv+fE9hrK+xTaCygOLh/kQeFzbFr7UqSyHvBDbrQq8Hg52sAkV2vTsyH3Z42hoeaKpbhM7udhL8Y4GYbl6TGQ==,
-      }
-    engines: { node: ">=4.0" }
 
   object-assign@4.1.1:
     resolution:
@@ -3311,13 +3219,6 @@ packages:
     engines: { node: ">=14" }
     hasBin: true
 
-  promisify-any@2.0.1:
-    resolution:
-      {
-        integrity: sha512-pVaGouFbTVxqpVJ+T5A15olNJDASAZHYq5cXz6mWdr6/X34mVWiG9MSdzHTcVBCv4aqBP7wGspi7BUSRbEmhsw==,
-      }
-    engines: { node: ">=0.10.0" }
-
   prop-types@15.8.1:
     resolution:
       {
@@ -3480,12 +3381,6 @@ packages:
         integrity: sha512-AURm5f0jYEOydBj7VQlVvDrjeFgthDdEF5H1dP+6mNpoXOMo1quQqJ4wvJDyRZ9+pO3kGWoOdmV08cSv2aJV6Q==,
       }
     engines: { node: ">=0.4" }
-
-  safe-buffer@5.1.2:
-    resolution:
-      {
-        integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==,
-      }
 
   safe-buffer@5.2.1:
     resolution:
@@ -3682,13 +3577,6 @@ packages:
       {
         integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==,
       }
-
-  statuses@1.5.0:
-    resolution:
-      {
-        integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==,
-      }
-    engines: { node: ">= 0.6" }
 
   statuses@2.0.1:
     resolution:
@@ -4000,13 +3888,6 @@ packages:
         integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==,
       }
     engines: { node: ">= 0.8.0" }
-
-  type-is@1.6.18:
-    resolution:
-      {
-        integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==,
-      }
-    engines: { node: ">= 0.6" }
 
   type-is@2.0.1:
     resolution:
@@ -5072,19 +4953,9 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  basic-auth@0.0.1: {}
-
-  basic-auth@2.0.1:
-    dependencies:
-      safe-buffer: 5.1.2
-
   better-path-resolve@1.0.0:
     dependencies:
       is-windows: 1.0.2
-
-  bluebird@2.11.0: {}
-
-  bluebird@3.7.2: {}
 
   body-parser@2.2.0:
     dependencies:
@@ -5174,13 +5045,6 @@ snapshots:
     dependencies:
       slice-ansi: 5.0.0
       string-width: 7.2.0
-
-  co-bluebird@1.1.0:
-    dependencies:
-      bluebird: 2.11.0
-      co-use: 1.1.0
-
-  co-use@1.1.0: {}
 
   color-convert@2.0.1:
     dependencies:
@@ -5904,8 +5768,6 @@ snapshots:
       has-tostringtag: 1.0.2
       safe-regex-test: 1.1.0
 
-  is-generator@1.0.3: {}
-
   is-glob@4.0.3:
     dependencies:
       is-extglob: 2.1.1
@@ -6082,8 +5944,6 @@ snapshots:
 
   lodash.startcase@4.4.0: {}
 
-  lodash@4.17.19: {}
-
   log-update@6.1.0:
     dependencies:
       ansi-escapes: 7.0.0
@@ -6106,8 +5966,6 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  media-typer@0.3.0: {}
-
   media-typer@1.1.0: {}
 
   merge-descriptors@2.0.0: {}
@@ -6121,13 +5979,7 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.1
 
-  mime-db@1.52.0: {}
-
   mime-db@1.54.0: {}
-
-  mime-types@2.1.35:
-    dependencies:
-      mime-db: 1.52.0
 
   mime-types@3.0.1:
     dependencies:
@@ -6174,22 +6026,9 @@ snapshots:
     dependencies:
       whatwg-url: 5.0.0
 
-  node-oauth2-server@2.4.0:
-    dependencies:
-      basic-auth: 0.0.1
-
   npm-run-path@5.3.0:
     dependencies:
       path-key: 4.0.0
-
-  oauth2-server@3.1.1:
-    dependencies:
-      basic-auth: 2.0.1
-      bluebird: 3.7.2
-      lodash: 4.17.19
-      promisify-any: 2.0.1
-      statuses: 1.5.0
-      type-is: 1.6.18
 
   object-assign@4.1.1: {}
 
@@ -6360,12 +6199,6 @@ snapshots:
 
   prettier@3.6.2: {}
 
-  promisify-any@2.0.1:
-    dependencies:
-      bluebird: 2.11.0
-      co-bluebird: 1.1.0
-      is-generator: 1.0.3
-
   prop-types@15.8.1:
     dependencies:
       loose-envify: 1.4.0
@@ -6495,8 +6328,6 @@ snapshots:
       get-intrinsic: 1.3.0
       has-symbols: 1.1.0
       isarray: 2.0.5
-
-  safe-buffer@5.1.2: {}
 
   safe-buffer@5.2.1: {}
 
@@ -6632,8 +6463,6 @@ snapshots:
   sprintf-js@1.0.3: {}
 
   stackback@0.0.2: {}
-
-  statuses@1.5.0: {}
 
   statuses@2.0.1: {}
 
@@ -6832,11 +6661,6 @@ snapshots:
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
-
-  type-is@1.6.18:
-    dependencies:
-      media-typer: 0.3.0
-      mime-types: 2.1.35
 
   type-is@2.0.1:
     dependencies:

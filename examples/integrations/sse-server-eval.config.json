@@ -33,41 +33,6 @@
     }
   ],
 
-  "resourceSuites": [
-    {
-      "name": "SSE Resource Tests",
-      "description": "Resource access testing over SSE transport",
-      "discoveryTests": [
-        {
-          "name": "list-resources",
-          "expectedCount": { "min": 1 }
-        }
-      ],
-      "resourceTests": [
-        {
-          "name": "config-resource",
-          "uri": "config://app.json",
-          "expectedMimeType": "application/json",
-          "maxLatency": 1500
-        }
-      ]
-    }
-  ],
-
-  "promptSuites": [
-    {
-      "name": "SSE Prompt Tests",
-      "description": "Prompt evaluation over SSE transport",
-      "promptTests": [
-        {
-          "name": "greeting",
-          "args": { "name": "World" },
-          "expectedContent": ["Hello", "World"]
-        }
-      ]
-    }
-  ],
-
   "workflows": [
     {
       "name": "SSE Multi-step Workflow",

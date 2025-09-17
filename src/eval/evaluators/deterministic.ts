@@ -1,20 +1,9 @@
 import { TraceStore } from "../core/trace.js";
 import { Workflow } from "../core/config.js";
-
-export interface EvaluationResult {
-  metric: string;
-  passed: boolean;
-  score: number;
-  details: string;
-  metadata?: Record<string, unknown>;
-}
-
-export interface WorkflowEvaluation {
-  workflowName: string;
-  results: EvaluationResult[];
-  overallScore: number;
-  passed: boolean;
-}
+import {
+  EvaluationResult,
+  WorkflowEvaluation,
+} from "../../types/evaluation.js";
 
 export class DeterministicEvaluator {
   private traceStore: TraceStore;

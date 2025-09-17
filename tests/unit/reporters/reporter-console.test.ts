@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ConsoleReporter } from "../../../src/eval/reporters/console";
-import { WorkflowEvaluation } from "../../../src/eval/evaluators/deterministic";
-import { ToolHealthResult } from "../../../src/eval/evaluators/tool-health";
+import { WorkflowEvaluation } from "../../../src/types/evaluation.js";
+import { ToolHealthResult } from "../../../src/types/tool.js";
 
 describe("ConsoleReporter", () => {
   let reporter: ConsoleReporter;

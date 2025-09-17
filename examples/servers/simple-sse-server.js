@@ -24,8 +24,6 @@ class SimpleSseServer {
       {
         capabilities: {
           tools: {},
-          resources: {},
-          prompts: {},
         },
       },
     );
