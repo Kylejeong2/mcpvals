@@ -2,21 +2,10 @@ import { Config, ServerConfig } from "../core/config.js";
 import { existsSync } from "fs";
 import { resolve } from "path";
 import { isIP } from "net";
-
-export interface ValidationResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
-  suggestions: string[];
-}
-
-export interface StartupValidationOptions {
-  checkFilePaths?: boolean;
-  checkEnvironmentVariables?: boolean;
-  checkServerConnectivity?: boolean;
-  validateTestReferences?: boolean;
-  strictMode?: boolean;
-}
+import {
+  ValidationResult,
+  StartupValidationOptions,
+} from "../../types/validation.js";
 
 /**
  * Check if a hostname is localhost or on a private network
@@ -342,9 +331,11 @@ export class ConfigurationValidator {
 
     // Check for duplicate suite names
     const suiteNames = new Set<string>();
-    const allSuites = [...(config.toolHealthSuites || []).map((s) => s.name)];
+    const toolHealthSuiteNames = (config.toolHealthSuites || []).map(
+      (s) => s.name,
+    );
 
-    for (const name of allSuites) {
+    for (const name of toolHealthSuiteNames) {
       if (suiteNames.has(name)) {
         errors.push(`Duplicate suite name: ${name}`);
       }
