@@ -33,7 +33,7 @@ export {
   WorkflowScorer,
   LatencyScorer,
   ContentScorer,
-} from "./vitest/scorers.js";
+} from "./vitest/scorers/index.js";
 export type {
   MCPTestConfig,
   MCPTestCase,
