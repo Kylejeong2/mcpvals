@@ -4,7 +4,7 @@ import {
   WorkflowScorer,
   LatencyScorer,
   ContentScorer,
-} from "../../../src/vitest/scorers.js";
+} from "../../../src/vitest/scorers/index";
 import type { MCPTestContext } from "../../../src/vitest/types.js";
 
 // Mock context for testing

@@ -12,7 +12,7 @@ export {
   WorkflowScorer,
   LatencyScorer,
   ContentScorer,
-} from "./scorers.js";
+} from "./scorers/index.js";
 export {
   expectToolCall,
   expectToolCalls,
