@@ -588,6 +588,9 @@ Focus on completing the tasks accurately and efficiently.`;
           apiKey: anthropicApiKey,
         });
 
+        // Capture the current number of recorded tool calls to later slice new ones
+        const toolCallsBeforeCount = this.traceStore.getToolCalls().length;
+
         const result = await this.resilienceManager.executeWithResilience(
           async () => {
             return await generateText({
@@ -615,12 +618,14 @@ Focus on completing the tasks accurately and efficiently.`;
 
         // Process tool calls and results if any
         if (result.toolCalls && result.toolResults) {
+          const newCalls = this.traceStore
+            .getToolCalls()
+            .slice(toolCallsBeforeCount);
+
           for (let i = 0; i < result.toolCalls.length; i++) {
             const toolCall = result.toolCalls[i];
             const toolResult = result.toolResults[i];
-
-            // NOTE: Tool calls are already recorded in TraceStore by the callTool method
-            // when the AI tools execute, so we don't need to record them again here
+            const recorded = newCalls[i];
 
             stepToolCalls.push({
               name: toolCall.toolName,
@@ -628,6 +633,11 @@ Focus on completing the tasks accurately and efficiently.`;
               result: toolResult,
               error: undefined,
             });
+
+            if (recorded) {
+              (stepToolCalls as Array<any>)[stepToolCalls.length - 1].id =
+                recorded.id;
+            }
           }
         }
 
@@ -639,15 +649,28 @@ Focus on completing the tasks accurately and efficiently.`;
           content: step.user,
           timestamp: new Date(),
         });
+        // Associate assistant message with real tool call ids when available
+        const resolvedIds: string[] = [];
+        for (const tc of stepToolCalls as Array<any>) {
+          if (tc.id) resolvedIds.push(tc.id as string);
+        }
+
+        // Prefer referencing by ids to avoid duplicating calls; fall back to embedding toolCalls for visibility
         this.traceStore.addMessage({
           role: "assistant",
           content: finalText,
-          toolCalls: stepToolCalls.map((tc) => ({
-            id: `call_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-            name: tc.name,
-            arguments: tc.args,
-            timestamp: new Date(),
-          })),
+          toolCallIds: resolvedIds.length > 0 ? resolvedIds : undefined,
+          toolCalls:
+            resolvedIds.length === 0
+              ? stepToolCalls.map((tc) => ({
+                  id: `call_${Date.now()}_${Math.random()
+                    .toString(36)
+                    .substring(2)}`,
+                  name: tc.name,
+                  arguments: tc.args,
+                  timestamp: new Date(),
+                }))
+              : undefined,
           timestamp: new Date(),
         });
 
