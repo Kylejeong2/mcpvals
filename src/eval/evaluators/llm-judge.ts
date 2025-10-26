@@ -24,14 +24,14 @@ function buildConversationDump(
     .map((msg: ConversationMessage) => {
       let content = `${msg.role.toUpperCase()}: ${msg.content}`;
 
-      // Prefer explicit toolCalls if provided, otherwise resolve via toolCallIds
-      const associatedToolCalls = Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0
-        ? msg.toolCalls
-        : Array.isArray(msg.toolCallIds) && msg.toolCallIds.length > 0
-          ? msg.toolCallIds
-              .map((id) => toolCallsById.get(id))
-              .filter((x): x is NonNullable<typeof x> => Boolean(x))
-          : [];
+      // Merge explicit toolCalls (if present) with resolved toolCallIds
+      const explicitCalls = Array.isArray(msg.toolCalls) ? msg.toolCalls : [];
+      const resolvedCalls = Array.isArray(msg.toolCallIds)
+        ? msg.toolCallIds
+            .map((id) => toolCallsById.get(id))
+            .filter((x): x is NonNullable<typeof x> => Boolean(x))
+        : [];
+      const associatedToolCalls = [...resolvedCalls, ...explicitCalls];
 
       if (associatedToolCalls.length > 0) {
         content += "\nTOOL CALLS:";

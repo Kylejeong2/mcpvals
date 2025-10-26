@@ -560,12 +560,14 @@ export class ServerRunner {
   }> {
     const aiTools = await this.getMcpToolsForAI();
     const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
-    const toolCalls: Array<{
+    type StepToolCall = {
       name: string;
       args: Record<string, unknown>;
       result: unknown;
       error?: string;
-    }> = [];
+      id?: string;
+    };
+    const toolCalls: StepToolCall[] = [];
 
     // System prompt for MCP workflow evaluation
     const systemPrompt = `You are an AI assistant evaluating an MCP server workflow. 
@@ -609,12 +611,7 @@ Focus on completing the tasks accurately and efficiently.`;
 
         // Extract text and tool results from generateText result
         const finalText = result.text;
-        const stepToolCalls: Array<{
-          name: string;
-          args: Record<string, unknown>;
-          result: unknown;
-          error?: string;
-        }> = [];
+        const stepToolCalls: StepToolCall[] = [];
 
         // Process tool calls and results if any
         if (result.toolCalls && result.toolResults) {
@@ -635,8 +632,7 @@ Focus on completing the tasks accurately and efficiently.`;
             });
 
             if (recorded) {
-              (stepToolCalls as Array<any>)[stepToolCalls.length - 1].id =
-                recorded.id;
+              stepToolCalls[stepToolCalls.length - 1].id = recorded.id;
             }
           }
         }
@@ -650,19 +646,22 @@ Focus on completing the tasks accurately and efficiently.`;
           timestamp: new Date(),
         });
         // Associate assistant message with real tool call ids when available
-        const resolvedIds: string[] = [];
-        for (const tc of stepToolCalls as Array<any>) {
-          if (tc.id) resolvedIds.push(tc.id as string);
-        }
+        const resolvedIds: string[] = stepToolCalls
+          .map((tc) => tc.id)
+          .filter((id): id is string => Boolean(id));
+        const unmatchedCalls: StepToolCall[] =
+          resolvedIds.length > 0
+            ? stepToolCalls.filter((tc) => !tc.id)
+            : stepToolCalls;
 
-        // Prefer referencing by ids to avoid duplicating calls; fall back to embedding toolCalls for visibility
+        // Store ids for matched calls and embed unmatched calls to avoid data loss
         this.traceStore.addMessage({
           role: "assistant",
           content: finalText,
           toolCallIds: resolvedIds.length > 0 ? resolvedIds : undefined,
           toolCalls:
-            resolvedIds.length === 0
-              ? stepToolCalls.map((tc) => ({
+            unmatchedCalls.length > 0
+              ? unmatchedCalls.map((tc) => ({
                   id: `call_${Date.now()}_${Math.random()
                     .toString(36)
                     .substring(2)}`,
