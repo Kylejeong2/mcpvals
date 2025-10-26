@@ -560,12 +560,14 @@ export class ServerRunner {
   }> {
     const aiTools = await this.getMcpToolsForAI();
     const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
-    const toolCalls: Array<{
+    type StepToolCall = {
       name: string;
       args: Record<string, unknown>;
       result: unknown;
       error?: string;
-    }> = [];
+      id?: string;
+    };
+    const toolCalls: StepToolCall[] = [];
 
     // System prompt for MCP workflow evaluation
     const systemPrompt = `You are an AI assistant evaluating an MCP server workflow. 
@@ -588,6 +590,9 @@ Focus on completing the tasks accurately and efficiently.`;
           apiKey: anthropicApiKey,
         });
 
+        // Capture the current number of recorded tool calls to later slice new ones
+        const toolCallsBeforeCount = this.traceStore.getToolCalls().length;
+
         const result = await this.resilienceManager.executeWithResilience(
           async () => {
             return await generateText({
@@ -606,21 +611,18 @@ Focus on completing the tasks accurately and efficiently.`;
 
         // Extract text and tool results from generateText result
         const finalText = result.text;
-        const stepToolCalls: Array<{
-          name: string;
-          args: Record<string, unknown>;
-          result: unknown;
-          error?: string;
-        }> = [];
+        const stepToolCalls: StepToolCall[] = [];
 
         // Process tool calls and results if any
         if (result.toolCalls && result.toolResults) {
+          const newCalls = this.traceStore
+            .getToolCalls()
+            .slice(toolCallsBeforeCount);
+
           for (let i = 0; i < result.toolCalls.length; i++) {
             const toolCall = result.toolCalls[i];
             const toolResult = result.toolResults[i];
-
-            // NOTE: Tool calls are already recorded in TraceStore by the callTool method
-            // when the AI tools execute, so we don't need to record them again here
+            const recorded = newCalls[i];
 
             stepToolCalls.push({
               name: toolCall.toolName,
@@ -628,6 +630,10 @@ Focus on completing the tasks accurately and efficiently.`;
               result: toolResult,
               error: undefined,
             });
+
+            if (recorded) {
+              stepToolCalls[stepToolCalls.length - 1].id = recorded.id;
+            }
           }
         }
 
@@ -639,15 +645,31 @@ Focus on completing the tasks accurately and efficiently.`;
           content: step.user,
           timestamp: new Date(),
         });
+        // Associate assistant message with real tool call ids when available
+        const resolvedIds: string[] = stepToolCalls
+          .map((tc) => tc.id)
+          .filter((id): id is string => Boolean(id));
+        const unmatchedCalls: StepToolCall[] =
+          resolvedIds.length > 0
+            ? stepToolCalls.filter((tc) => !tc.id)
+            : stepToolCalls;
+
+        // Store ids for matched calls and embed unmatched calls to avoid data loss
         this.traceStore.addMessage({
           role: "assistant",
           content: finalText,
-          toolCalls: stepToolCalls.map((tc) => ({
-            id: `call_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-            name: tc.name,
-            arguments: tc.args,
-            timestamp: new Date(),
-          })),
+          toolCallIds: resolvedIds.length > 0 ? resolvedIds : undefined,
+          toolCalls:
+            unmatchedCalls.length > 0
+              ? unmatchedCalls.map((tc) => ({
+                  id: `call_${Date.now()}_${Math.random()
+                    .toString(36)
+                    .substring(2)}`,
+                  name: tc.name,
+                  arguments: tc.args,
+                  timestamp: new Date(),
+                }))
+              : undefined,
           timestamp: new Date(),
         });
 

@@ -27,6 +27,9 @@ export interface ConversationMessage {
   role: "user" | "assistant";
   content: string;
   toolCalls?: ToolCall[];
+  // Optional references to tool calls recorded in TraceStore
+  // Prefer using ids to avoid duplicating ToolCall data and ensure consistency
+  toolCallIds?: string[];
   timestamp: Date;
 }
 

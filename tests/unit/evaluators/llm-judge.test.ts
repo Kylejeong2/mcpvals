@@ -49,18 +49,20 @@ describe("LLM Judge", () => {
       timestamp: new Date(),
     });
 
+    // Record the tool call in the store and associate via toolCallIds on the assistant message
+    const toolCallId = "call_123";
+    traceStore.addToolCall({
+      id: toolCallId,
+      name: "calculate",
+      arguments: { a: 2, b: 2, operation: "add" },
+      timestamp: new Date(),
+    });
+
     traceStore.addMessage({
       role: "assistant",
       content: "The answer is 4",
       timestamp: new Date(),
-      toolCalls: [
-        {
-          id: "call_123",
-          name: "calculate",
-          arguments: { a: 2, b: 2, operation: "add" },
-          timestamp: new Date(),
-        },
-      ],
+      toolCallIds: [toolCallId],
     });
 
     traceStore.addToolResult({

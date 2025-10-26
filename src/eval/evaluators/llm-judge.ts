@@ -13,17 +13,29 @@ function buildConversationDump(
   maxMessages?: number,
 ): string {
   const messages = traceStore.getConversation();
-  const messagesToInclude = maxMessages
-    ? messages.slice(-maxMessages)
-    : messages;
+  const messagesToInclude = maxMessages ? messages.slice(-maxMessages) : messages;
+
+  // Build a lookup for tool calls by id to resolve toolCallIds
+  const toolCallsById = new Map(
+    traceStore.getToolCalls().map((tc) => [tc.id, tc]),
+  );
 
   return messagesToInclude
     .map((msg: ConversationMessage) => {
       let content = `${msg.role.toUpperCase()}: ${msg.content}`;
 
-      if (msg.toolCalls && msg.toolCalls.length > 0) {
+      // Merge explicit toolCalls (if present) with resolved toolCallIds
+      const explicitCalls = Array.isArray(msg.toolCalls) ? msg.toolCalls : [];
+      const resolvedCalls = Array.isArray(msg.toolCallIds)
+        ? msg.toolCallIds
+            .map((id) => toolCallsById.get(id))
+            .filter((x): x is NonNullable<typeof x> => Boolean(x))
+        : [];
+      const associatedToolCalls = [...resolvedCalls, ...explicitCalls];
+
+      if (associatedToolCalls.length > 0) {
         content += "\nTOOL CALLS:";
-        msg.toolCalls.forEach((call) => {
+        associatedToolCalls.forEach((call) => {
           content += `\n  - ${call.name}(${JSON.stringify(call.arguments)})`;
         });
       }

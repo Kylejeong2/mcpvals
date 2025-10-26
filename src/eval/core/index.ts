@@ -98,7 +98,7 @@ export async function evaluate(
         const { success, messages, toolCalls } =
           await runner.runWorkflowWithLLM(workflow.steps);
 
-        // Import results into trace store
+        // Import results into trace store (messages only; tool calls already recorded)
         for (const message of messages) {
           traceStore.addMessage({
             role: message.role as "user" | "assistant",
