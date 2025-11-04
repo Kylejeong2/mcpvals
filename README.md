@@ -314,7 +314,7 @@ import {
   ToolCallScorer,
   LatencyScorer,
   ContentScorer,
-} from "mcpvals";
+} from "mcpvals/vitest";
 
 describe("Calculator MCP Server", () => {
   beforeAll(async () => {
@@ -529,7 +529,7 @@ import type {
   LatencyScorerOptions,
   ContentScorerOptions,
   WorkflowScorerOptions,
-} from "mcpvals";
+} from "mcpvals/vitest";
 
 // Typed test case
 const testCase: ToolCallTestCase = {
@@ -704,7 +704,7 @@ import {
   ContentScorer,
   type ToolCallTestCase,
   type MCPToolResult,
-} from "mcpvals";
+} from "mcpvals/vitest";
 
 describe("Production Calculator Server", () => {
   beforeAll(async () => {
