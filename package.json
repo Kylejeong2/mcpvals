@@ -1,6 +1,6 @@
 {
   "name": "mcpvals",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Evaluation library for Model Context Protocol servers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
