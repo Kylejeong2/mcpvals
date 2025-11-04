@@ -25,6 +25,11 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText, tool } from "ai";
 import { z } from "zod";
 import { MCPTransports, ServerRunnerOptions } from "../../types/server.js";
+import {
+  jsonSchemaToZod,
+  getZodSchemaSummary,
+  type JSONSchema,
+} from "../infrastructure/json-schema-to-zod.js";
 
 export class ServerRunner {
   private client?: Client;
@@ -416,6 +421,13 @@ export class ServerRunner {
     const client = this.getClient();
     const toolCallId = `tool_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
+    if (this.options.debug) {
+      console.log(`[DEBUG:TOOL_CALL] Executing tool: ${name}`);
+      console.log(
+        `[DEBUG:TOOL_CALL] - Arguments: ${JSON.stringify(args, null, 2)}`,
+      );
+    }
+
     // Record the tool call
     this.traceStore.addToolCall({
       id: toolCallId,
@@ -423,6 +435,8 @@ export class ServerRunner {
       arguments: args,
       timestamp: new Date(),
     });
+
+    const startTime = Date.now();
 
     try {
       const response = await this.resilienceManager.executeWithResilience(
@@ -438,6 +452,18 @@ export class ServerRunner {
         },
       );
 
+      const duration = Date.now() - startTime;
+
+      if (this.options.debug) {
+        console.log(
+          `[DEBUG:TOOL_CALL] - Tool ${name} succeeded in ${duration}ms`,
+        );
+        const resultPreview = JSON.stringify(response).slice(0, 200);
+        console.log(
+          `[DEBUG:TOOL_CALL] - Result preview: ${resultPreview}${JSON.stringify(response).length > 200 ? "..." : ""}`,
+        );
+      }
+
       // Record the result
       this.traceStore.addToolResult({
         id: `result_${Date.now()}_${Math.random().toString(36).substring(2)}`,
@@ -448,6 +474,17 @@ export class ServerRunner {
 
       return response;
     } catch (error) {
+      const duration = Date.now() - startTime;
+
+      if (this.options.debug) {
+        console.log(
+          `[DEBUG:TOOL_CALL] - Tool ${name} failed after ${duration}ms`,
+        );
+        console.log(
+          `[DEBUG:TOOL_CALL] - Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+
       // Record the error
       this.traceStore.addToolResult({
         id: `result_${Date.now()}_${Math.random().toString(36).substring(2)}`,
@@ -470,58 +507,61 @@ export class ServerRunner {
     const mcpTools = await this.listTools();
     const aiTools: Record<string, ReturnType<typeof tool>> = {};
 
+    if (this.options.debug) {
+      console.log(
+        `[DEBUG:AI_TOOLS] Converting ${mcpTools.length} MCP tools to AI SDK format`,
+      );
+    }
+
     for (const mcpTool of mcpTools) {
-      // Create a simple Zod schema based on MCP tool schema
-      let parameters = z.object({});
+      if (this.options.debug) {
+        console.log(`[DEBUG:TOOL_SCHEMA] Converting tool: ${mcpTool.name}`);
+        console.log(
+          `[DEBUG:TOOL_SCHEMA] - Description: ${mcpTool.description || "(none)"}`,
+        );
+        if (mcpTool.inputSchema) {
+          console.log(
+            `[DEBUG:TOOL_SCHEMA] - Input schema: ${JSON.stringify(mcpTool.inputSchema, null, 2)}`,
+          );
+        }
+      }
 
-      if (
-        mcpTool.inputSchema?.type === "object" &&
-        mcpTool.inputSchema.properties
-      ) {
-        const shape: Record<string, z.ZodTypeAny> = {};
+      let parameters: z.ZodTypeAny = z.object({});
 
-        for (const [propName, propSchema] of Object.entries(
-          mcpTool.inputSchema.properties,
-        )) {
-          // Type the property schema properly - JSON Schema format
-          const prop = propSchema as { type?: string; description?: string };
-          let zodType: z.ZodTypeAny;
+      if (mcpTool.inputSchema) {
+        // Use comprehensive JSON Schema to Zod converter
+        const conversionResult = jsonSchemaToZod(
+          mcpTool.inputSchema as JSONSchema,
+          {
+            debug: this.options.debug,
+            strictMode: false, // Allow additional properties by default
+          },
+          `tool.${mcpTool.name}`,
+        );
 
-          switch (prop.type) {
-            case "string":
-              zodType = z.string();
-              break;
-            case "number":
-              zodType = z.number();
-              break;
-            case "boolean":
-              zodType = z.boolean();
-              break;
-            case "array":
-              zodType = z.array(z.unknown());
-              break;
-            case "object":
-              zodType = z.object({});
-              break;
-            default:
-              zodType = z.string(); // Default to string for unknown types
+        if (conversionResult.warnings.length > 0 && this.options.debug) {
+          console.warn(
+            `[WARN:TOOL_SCHEMA] Tool ${mcpTool.name} conversion warnings:`,
+          );
+          for (const warning of conversionResult.warnings) {
+            console.warn(`[WARN:TOOL_SCHEMA]   - ${warning.message}`);
           }
-
-          if (prop.description) {
-            zodType = zodType.describe(prop.description);
-          }
-
-          // Check if required
-          const isRequired =
-            mcpTool.inputSchema?.required?.includes(propName) ?? false;
-          if (!isRequired) {
-            zodType = zodType.optional();
-          }
-
-          shape[propName] = zodType;
         }
 
-        parameters = z.object(shape);
+        parameters = conversionResult.schema;
+
+        if (this.options.debug) {
+          const schemaSummary = getZodSchemaSummary(parameters);
+          console.log(
+            `[DEBUG:CONVERSION] Converted to Zod schema: ${schemaSummary}`,
+          );
+        }
+      } else {
+        if (this.options.debug) {
+          console.log(
+            `[DEBUG:TOOL_SCHEMA] - No input schema, using empty object`,
+          );
+        }
       }
 
       aiTools[mcpTool.name] = tool({
@@ -532,6 +572,15 @@ export class ServerRunner {
           return result;
         },
       }) as unknown as ReturnType<typeof tool>;
+    }
+
+    if (this.options.debug) {
+      console.log(
+        `[DEBUG:AI_TOOLS] Successfully registered ${Object.keys(aiTools).length} tools with AI SDK`,
+      );
+      console.log(
+        `[DEBUG:AI_TOOLS] - Tools: ${Object.keys(aiTools).join(", ")}`,
+      );
     }
 
     return aiTools;
@@ -576,6 +625,20 @@ Focus on completing the tasks accurately and efficiently.`;
     for (const step of steps) {
       messages.push({ role: "user", content: step.user });
 
+      if (this.options.debug) {
+        console.log(
+          `[DEBUG:WORKFLOW] Starting workflow step: "${step.user.slice(0, 100)}${step.user.length > 100 ? "..." : ""}"`,
+        );
+        console.log(
+          `[DEBUG:WORKFLOW] - Available tools: ${Object.keys(aiTools).join(", ")}`,
+        );
+        if (step.expectTools) {
+          console.log(
+            `[DEBUG:WORKFLOW] - Expected tools: ${step.expectTools.join(", ")}`,
+          );
+        }
+      }
+
       try {
         const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
         if (!anthropicApiKey) {
@@ -587,6 +650,8 @@ Focus on completing the tasks accurately and efficiently.`;
         const anthropic = createAnthropic({
           apiKey: anthropicApiKey,
         });
+
+        const workflowStartTime = Date.now();
 
         const result = await this.resilienceManager.executeWithResilience(
           async () => {
@@ -604,6 +669,8 @@ Focus on completing the tasks accurately and efficiently.`;
           },
         );
 
+        const workflowDuration = Date.now() - workflowStartTime;
+
         // Extract text and tool results from generateText result
         const finalText = result.text;
         const stepToolCalls: Array<{
@@ -613,11 +680,29 @@ Focus on completing the tasks accurately and efficiently.`;
           error?: string;
         }> = [];
 
+        if (this.options.debug) {
+          console.log(
+            `[DEBUG:AI_RESPONSE] Workflow step completed in ${workflowDuration}ms`,
+          );
+          console.log(
+            `[DEBUG:AI_RESPONSE] - Response text: ${finalText.slice(0, 200)}${finalText.length > 200 ? "..." : ""}`,
+          );
+          console.log(
+            `[DEBUG:AI_RESPONSE] - Tool calls made: ${result.toolCalls?.length || 0}`,
+          );
+        }
+
         // Process tool calls and results if any
         if (result.toolCalls && result.toolResults) {
           for (let i = 0; i < result.toolCalls.length; i++) {
             const toolCall = result.toolCalls[i];
             const toolResult = result.toolResults[i];
+
+            if (this.options.debug) {
+              console.log(
+                `[DEBUG:AI_RESPONSE] - Tool ${i + 1}: ${toolCall.toolName}(${JSON.stringify(toolCall.args).slice(0, 100)})`,
+              );
+            }
 
             // NOTE: Tool calls are already recorded in TraceStore by the callTool method
             // when the AI tools execute, so we don't need to record them again here
@@ -629,6 +714,10 @@ Focus on completing the tasks accurately and efficiently.`;
               error: undefined,
             });
           }
+        } else if (this.options.debug) {
+          console.log(
+            `[DEBUG:AI_RESPONSE] - AI chose not to invoke any tools for this step`,
+          );
         }
 
         messages.push({ role: "assistant", content: finalText });
