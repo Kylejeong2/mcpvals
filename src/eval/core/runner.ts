@@ -39,6 +39,7 @@ export class ServerRunner {
   private options: ServerRunnerOptions;
   private performanceMonitor: PerformanceMonitor;
   private resilienceManager: ResilienceManager;
+  private model: string;
   private sseConnectionState: "connecting" | "connected" | "disconnected" =
     "disconnected";
   private reconnectTimeout?: NodeJS.Timeout;
@@ -54,6 +55,7 @@ export class ServerRunner {
     this.serverConfig = serverConfig;
     this.traceStore = traceStore || new TraceStore(options.traceStoreOptions);
     this.options = options;
+    this.model = options.model || "claude-sonnet-4-5";
 
     // Initialize performance monitoring
     this.performanceMonitor = new PerformanceMonitor(
@@ -655,7 +657,7 @@ Focus on completing the tasks accurately and efficiently.`;
         const result = await this.resilienceManager.executeWithResilience(
           async () => {
             return await generateText({
-              model: anthropic("claude-3-5-sonnet-20241022"),
+              model: anthropic(this.model),
               system: systemPrompt,
               messages,
               tools: aiTools,

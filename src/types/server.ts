@@ -17,6 +17,7 @@ export type MCPTransports =
 export interface ServerRunnerOptions {
   timeout?: number;
   debug?: boolean;
+  model?: string; // Anthropic model name
   performanceThresholds?: Partial<PerformanceThresholds>;
   traceStoreOptions?: TraceStoreOptions;
   retryOptions?: Partial<RetryOptions>;
