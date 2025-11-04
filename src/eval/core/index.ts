@@ -37,6 +37,7 @@ export async function evaluate(
   const runner = new ServerRunner(config.server, traceStore, {
     timeout: config.timeout,
     debug: options.debug,
+    model: options.model,
   });
 
   // Results collection

@@ -8,6 +8,7 @@ export interface EvaluateOptions {
   llmJudge?: boolean;
   toolHealthOnly?: boolean;
   workflowsOnly?: boolean;
+  model?: string; // Anthropic model name, defaults to claude-sonnet-4-5
 }
 
 export interface EvaluationReport {
