@@ -534,7 +534,6 @@ export class ServerRunner {
           mcpTool.inputSchema as JSONSchema,
           {
             debug: this.options.debug,
-            strictMode: false, // Allow additional properties by default
           },
           `tool.${mcpTool.name}`,
         );
